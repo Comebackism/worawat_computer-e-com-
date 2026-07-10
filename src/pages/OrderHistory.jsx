@@ -135,7 +135,7 @@ export default function OrderHistory() {
                 <div>
                   <div className="flex items-center gap-2 text-primary font-bold text-2xl tracking-tight mb-2">
                     <Monitor className="w-8 h-8" />
-                    worawat computer
+                    Worawat_computer
                   </div>
                   <p className="text-slate-500 text-sm">123 Hardware Street, Tech City</p>
                   <p className="text-slate-500 text-sm">contact@worawatcomputer.com</p>

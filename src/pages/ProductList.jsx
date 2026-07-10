@@ -8,10 +8,10 @@ export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [maxPrice, setMaxPrice] = useState(100000);
+  const [sortBy, setSortBy] = useState('default');
 
   const availableBrands = ['NVIDIA', 'AMD', 'Corsair', 'ASUS'];
 
@@ -40,6 +40,7 @@ export default function ProductList() {
     setSearchQuery('');
     setSelectedBrands([]);
     setMaxPrice(100000);
+    setSortBy('default');
   };
 
   const filteredProducts = products.filter(product => {
@@ -49,6 +50,13 @@ export default function ProductList() {
     const matchesPrice = product.price <= maxPrice;
     
     return matchesSearch && matchesBrand && matchesPrice;
+  }).sort((a, b) => {
+    if (sortBy === 'lowToHigh') {
+      return a.price - b.price;
+    } else if (sortBy === 'highToLow') {
+      return b.price - a.price;
+    }
+    return 0; // default (no sorting by price, keep original order)
   });
 
   return (
@@ -106,17 +114,40 @@ export default function ProductList() {
 
       {/* Product Grid */}
       <div className="flex-grow">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{t('products.title')}</h1>
-          <div className="relative w-full sm:w-auto">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('products.search')}
-              className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-full sm:w-64 bg-white"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('products.search')}
+                className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-full bg-white"
+              />
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-slate-600 whitespace-nowrap hidden sm:block">{t('products.sortBy')}</span>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="py-2 pl-3 pr-8 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white text-slate-700 cursor-pointer w-full sm:w-auto appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.5rem center',
+                  backgroundSize: '1em 1em'
+                }}
+              >
+                <option value="default">{t('products.sortDefault')}</option>
+                <option value="lowToHigh">{t('products.sortLowHigh')}</option>
+                <option value="highToLow">{t('products.sortHighLow')}</option>
+              </select>
+            </div>
           </div>
         </div>
 

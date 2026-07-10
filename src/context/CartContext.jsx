@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from 'react';
 
 const CartContext = createContext();
@@ -21,6 +22,13 @@ export function CartProvider({ children }) {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const updateQuantity = (id, quantity) => {
+    if (quantity < 1) return;
+    setCartItems(prev => prev.map(item => 
+      item.id === id ? { ...item, quantity } : item
+    ));
+  };
+
   const clearCart = () => {
     setCartItems([]);
   };
@@ -33,6 +41,7 @@ export function CartProvider({ children }) {
       cartItems,
       addToCart,
       removeFromCart,
+      updateQuantity,
       clearCart,
       cartTotal,
       cartCount

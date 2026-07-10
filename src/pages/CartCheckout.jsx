@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, QrCode, Trash2, ArrowRight } from 'lucide-react';
+import { CreditCard, QrCode, Trash2, ArrowRight, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function CartCheckout() {
   const { t } = useLanguage();
-  const { cartItems, removeFromCart, cartTotal, clearCart } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -68,7 +68,18 @@ export default function CartCheckout() {
                   <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg bg-slate-50 border border-slate-100" />
                   <div className="flex-grow">
                     <h3 className="font-bold text-lg">{item.name}</h3>
-                    <div className="text-slate-500 font-medium">{t('checkout.qty')}: {item.quantity}</div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-slate-500 font-medium">{t('checkout.qty')}:</span>
+                      <div className="flex items-center bg-slate-100 rounded-lg">
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 text-slate-500 hover:text-primary transition-colors focus:outline-none">
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 text-slate-500 hover:text-primary transition-colors focus:outline-none">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="price-lg text-xl mb-1">฿{(item.price * item.quantity).toLocaleString()}</div>

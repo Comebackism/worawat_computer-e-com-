@@ -6,7 +6,7 @@ import {
   Cpu, LayoutGrid, Monitor, HardDrive, 
   Database, SquareTerminal, BatteryCharging, 
   Box, Wind, Fan, Mouse, Keyboard, Headphones,
-  Gamepad, Code, PlusCircle, CheckCircle2, ShoppingCart, Trash2
+  Gamepad, Code, CheckCircle2, ShoppingCart, Trash2
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -104,7 +104,6 @@ export default function Builder() {
             <div className="overflow-y-auto flex-grow p-3 space-y-1 custom-scrollbar">
               {CATEGORIES.map(cat => {
                 const isSelected = activeCategory.id === cat.id;
-                const hasPart = buildParts[cat.id];
                 const Icon = cat.icon;
                 
                 return (

@@ -8,7 +8,8 @@ import OrderHistory from './pages/OrderHistory';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Builder from './pages/Builder';
-import { ShoppingCart, Monitor, History, LogIn, User, LogOut, Globe, Menu, X, Hammer } from 'lucide-react';
+import AdminDashboard from './pages/AdminDashboard';
+import { ShoppingCart, Monitor, History, LogIn, User, LogOut, Globe, Menu, X, Hammer, Shield } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -26,7 +27,7 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight select-none focus:outline-none">
           <Monitor className="w-6 h-6" />
-          worawat computer
+          Worawat_computer
         </Link>
         <div className="flex gap-4 md:gap-6 items-center">
           <button onClick={toggleLanguage} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg select-none focus:outline-none hidden md:flex">
@@ -42,6 +43,9 @@ function Navbar() {
               <>
                 <Link to="/orders" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
                   <History className="w-4 h-4" /> {t('nav.orders')}
+                </Link>
+                <Link to="/admin" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
+                  <Shield className="w-4 h-4" /> {t('admin.title')}
                 </Link>
                 <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
                   <span className="text-sm font-bold text-slate-700 flex items-center gap-1 select-none"><User className="w-4 h-4 text-primary" /> {user.name}</span>
@@ -88,6 +92,9 @@ function Navbar() {
             <>
               <Link to="/orders" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
                 <History className="w-5 h-5" /> {t('nav.orders')}
+              </Link>
+              <Link to="/admin" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
+                <Shield className="w-5 h-5" /> {t('admin.title')}
               </Link>
               <div className="flex flex-col gap-2 pt-2">
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2 select-none py-2"><User className="w-5 h-5 text-primary" /> {user.name}</span>
@@ -148,10 +155,15 @@ function App() {
                     <OrderHistory />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </main>
             <footer className="bg-white border-t border-slate-200 mt-12 py-8 text-center text-slate-500">
-              <p>&copy; 2026 worawat computer. All rights reserved.</p>
+              <p>&copy; 2026 Worawat_computer. All rights reserved.</p>
             </footer>
             </div>
           </Router>
