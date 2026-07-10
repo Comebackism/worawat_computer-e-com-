@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   // Add/Edit Product State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [newProduct, setNewProduct] = useState({ name: '', category: '', price: '', stock: '', image: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '' });
   
   // Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
       setNewProduct(product);
     } else {
       setEditingProduct(null);
-      setNewProduct({ name: '', category: '', price: '', stock: '', image: '' });
+      setNewProduct({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '' });
     }
     setIsModalOpen(true);
   };
@@ -487,9 +487,20 @@ export default function AdminDashboard() {
                 <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
               </div>
               
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.category')}</label>
+                  <input required type="text" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Brand</label>
+                  <input required type="text" value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.category')}</label>
-                <input required type="text" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea rows="2" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none"></textarea>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

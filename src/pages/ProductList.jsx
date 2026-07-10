@@ -44,9 +44,10 @@ export default function ProductList() {
   };
 
   const filteredProducts = products.filter(product => {
+    const brandStr = product.brand || '';
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          product.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand);
+                          brandStr.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(brandStr);
     const matchesPrice = product.price <= maxPrice;
     
     return matchesSearch && matchesBrand && matchesPrice;

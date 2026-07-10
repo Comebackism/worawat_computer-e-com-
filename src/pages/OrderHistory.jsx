@@ -26,8 +26,8 @@ export default function OrderHistory() {
   };
 
   return (
-    <div className={`max-w-7xl mx-auto px-6 py-12 relative ${selectedInvoice ? 'print:hidden' : ''}`}>
-      <div className="flex items-center gap-4 mb-10">
+    <div className="max-w-7xl mx-auto px-6 py-12 relative print:p-0 print:m-0">
+      <div className={`flex items-center gap-4 mb-10 ${selectedInvoice ? 'print:hidden' : ''}`}>
         <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
           <Package className="w-6 h-6" />
         </div>
@@ -35,13 +35,13 @@ export default function OrderHistory() {
       </div>
 
       {loading ? (
-        <div className="space-y-6">
+        <div className={`space-y-6 ${selectedInvoice ? 'print:hidden' : ''}`}>
           {[1,2].map(n => (
             <div key={n} className="h-48 bg-slate-100 animate-pulse rounded-2xl"></div>
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className={`space-y-6 ${selectedInvoice ? 'print:hidden' : ''}`}>
           {orders.map(order => (
             <div key={order.id} className="bg-surface rounded-2xl shadow-ambient border border-slate-100 overflow-hidden">
               {/* Order Header */}

@@ -285,6 +285,12 @@ let customers = [
   { id: 5, name: 'Sarah Connor', email: 'sarah.connor@example.com', date: '2026-06-25', spent: 7500 },
 ];
 
+// Add default stock to all mock products
+products = products.map(p => ({
+  ...p,
+  stock: Math.floor(Math.random() * 50) + 10 // random stock between 10 and 59
+}));
+
 // Endpoints
 app.get('/api/products', (req, res) => {
   res.json(products);
@@ -316,6 +322,8 @@ app.post('/api/products', (req, res) => {
   const newProduct = {
     id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
     name: req.body.name,
+    brand: req.body.brand || 'Other',
+    description: req.body.description || 'No description provided.',
     category: req.body.category,
     price: Number(req.body.price),
     stock: Number(req.body.stock),

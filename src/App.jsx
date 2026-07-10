@@ -23,7 +23,7 @@ function Navbar() {
   const closeMenu = () => setIsMobileMenuOpen(false);
   
   return (
-    <nav className="bg-surface shadow-ambient sticky top-0 z-50">
+    <nav className="bg-surface shadow-ambient sticky top-0 z-50 print:hidden">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight select-none focus:outline-none">
           <Monitor className="w-6 h-6" />
@@ -162,7 +162,7 @@ function App() {
                 } />
               </Routes>
             </main>
-            <footer className="bg-white border-t border-slate-200 mt-12 py-8 text-center text-slate-500">
+            <footer className="bg-white border-t border-slate-200 mt-12 py-8 text-center text-slate-500 print:hidden">
               <p>&copy; 2026 Worawat_computer. All rights reserved.</p>
             </footer>
             </div>
