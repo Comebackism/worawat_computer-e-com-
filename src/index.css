@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Prompt', sans-serif;
+  --color-primary: #004ac6;
+  --color-background: #f7f9fb;
+  --color-surface: #ffffff;
+  --shadow-ambient: 0 4px 20px rgba(30, 41, 59, 0.06);
+
+  --animate-slideInDown: slideInDown 1s ease-out;
+  --animate-fadeIn: fadeIn 1.5s ease-out;
+  --animate-slideInUp: slideInUp 1s ease-out;
+
+  @keyframes slideInDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+body {
+  background-color: var(--color-background);
+  color: #1e293b;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@utility price-lg {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+@utility tech-text {
+  font-size: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: -0.025em;
+}
