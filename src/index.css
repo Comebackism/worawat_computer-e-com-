@@ -64,7 +64,7 @@ body {
     size: A4;
     margin: 1cm;
   }
-  body {
+  body, #root {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     background-color: white !important;

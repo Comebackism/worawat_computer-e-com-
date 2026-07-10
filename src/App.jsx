@@ -135,7 +135,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
-            <div className="min-h-screen flex flex-col bg-background font-sans text-slate-800 select-none focus:outline-none">
+            <div className="min-h-screen flex flex-col bg-background font-sans text-slate-800 select-none focus:outline-none print:bg-white print:min-h-0">
               <Navbar />
             <main className="flex-grow w-full">
               <Routes>

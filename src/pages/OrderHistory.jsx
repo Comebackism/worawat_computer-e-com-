@@ -128,7 +128,7 @@ export default function OrderHistory() {
             </div>
 
             {/* Printable Invoice Area */}
-            <div className="p-8 sm:p-12 print:p-0 text-slate-800 flex-grow">
+            <div className="p-8 sm:p-12 print:p-0 text-slate-800 flex-grow print:flex-grow-0 print:bg-white">
               
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start gap-8 mb-12 border-b border-slate-200 pb-8">
