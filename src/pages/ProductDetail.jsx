@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ShoppingCart, Star, Shield, Truck, ArrowLeft, Check } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Star, Shield, Truck, ArrowLeft, Check, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -11,6 +11,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/products/${id}`)
@@ -45,22 +47,35 @@ export default function ProductDetail() {
           <div className="mb-6">
             <span className="text-sm font-bold text-primary tracking-wider uppercase mb-2 block">{product.brand}</span>
             <h1 className="text-4xl font-extrabold text-slate-900 mb-4 leading-tight">{product.name}</h1>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex text-yellow-400">
-                {[1,2,3,4,5].map(star => <Star key={star} className="w-5 h-5 fill-current" />)}
-              </div>
-              <span className="text-slate-500 text-sm font-medium">(24 {t('product.reviews')})</span>
-            </div>
             <div className="price-lg text-4xl mb-6">฿{product.price.toLocaleString()}</div>
             <p className="text-slate-600 leading-relaxed mb-8">{product.description}</p>
+          </div>
+
+          <div className="flex items-center gap-4 mb-6">
+            <span className="font-semibold text-slate-700">{t('product.quantity') || 'Quantity'}:</span>
+            <div className="flex items-center bg-slate-100 rounded-lg">
+              <button 
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none"
+              >
+                <Minus className="w-5 h-5" />
+              </button>
+              <span className="w-12 text-center font-bold text-slate-800 select-none">{quantity}</span>
+              <button 
+                onClick={() => setQuantity(quantity + 1)}
+                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 mb-8">
             <button 
               onClick={() => {
-                addToCart(product);
+                addToCart(product, quantity);
                 setAdded(true);
-                setTimeout(() => setAdded(false), 2000);
+                setTimeout(() => setAdded(false), 3000);
               }}
               disabled={added}
               className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 select-none focus:outline-none ${added ? 'bg-green-500 text-white cursor-default' : 'bg-primary hover:bg-blue-700 text-white'}`}
@@ -126,6 +141,22 @@ export default function ProductDetail() {
           </table>
         </div>
       </div>
+
+      {/* Floating Cart Notification */}
+      {added && (
+        <div className="fixed bottom-8 right-8 bg-slate-900 text-white p-4 rounded-xl shadow-2xl flex items-center gap-4 z-50 animate-[slideInUp_0.3s_ease-out]">
+          <div className="bg-green-500 rounded-full p-2">
+            <Check className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold">{t('product.addedToCart')}</p>
+            <p className="text-slate-300 text-sm">{product.name} (x{quantity})</p>
+          </div>
+          <Link to="/cart" className="ml-4 bg-primary hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition-colors">
+            {t('cart.title') || 'View Cart'}
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

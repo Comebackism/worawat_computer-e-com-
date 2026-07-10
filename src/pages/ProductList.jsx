@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Filter, Search } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ProductList() {
   const { t } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState(categoryParam ? [categoryParam] : []);
   const [maxPrice, setMaxPrice] = useState(100000);
   const [sortBy, setSortBy] = useState('default');
 
   const availableBrands = ['NVIDIA', 'AMD', 'Corsair', 'ASUS'];
+  const availableCategories = ['GPU', 'CPU', 'RAM', 'Motherboard', 'Storage', 'Cooling', 'Power Supply', 'Case', 'Monitor', 'Peripherals', 'Software'];
 
   useEffect(() => {
     fetch('http://localhost:4000/api/products')
@@ -28,6 +33,12 @@ export default function ProductList() {
       });
   }, []);
 
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategories([categoryParam]);
+    }
+  }, [categoryParam]);
+
   const handleBrandToggle = (brand) => {
     setSelectedBrands(prev => 
       prev.includes(brand) 
@@ -36,21 +47,43 @@ export default function ProductList() {
     );
   };
 
+  const handleCategoryToggle = (category) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category) 
+        : [...prev, category]
+    );
+    // Remove category from URL if we deselect it
+    if (searchParams.has('category')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('category');
+      setSearchParams(newParams);
+    }
+  };
+
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedBrands([]);
+    setSelectedCategories([]);
     setMaxPrice(100000);
     setSortBy('default');
+    if (searchParams.has('category')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('category');
+      setSearchParams(newParams);
+    }
   };
 
   const filteredProducts = products.filter(product => {
     const brandStr = product.brand || '';
+    const categoryStr = product.category || '';
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           brandStr.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(brandStr);
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(categoryStr);
     const matchesPrice = product.price <= maxPrice;
     
-    return matchesSearch && matchesBrand && matchesPrice;
+    return matchesSearch && matchesBrand && matchesCategory && matchesPrice;
   }).sort((a, b) => {
     if (sortBy === 'lowToHigh') {
       return a.price - b.price;
@@ -70,6 +103,23 @@ export default function ProductList() {
             <h2 className="font-bold text-lg">{t('products.filters')}</h2>
           </div>
           
+          <div className="mb-6">
+            <h3 className="font-semibold mb-3 text-slate-700">{t('products.category') || 'Category'}</h3>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              {availableCategories.map(cat => (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedCategories.includes(cat)}
+                    onChange={() => handleCategoryToggle(cat)}
+                    className="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer" 
+                  />
+                  <span className="text-slate-600 select-none">{cat}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="mb-6">
             <h3 className="font-semibold mb-3 text-slate-700">{t('products.brand')}</h3>
             <div className="space-y-2">

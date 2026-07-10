@@ -172,11 +172,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteOrder = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) return;
+  const handleCancelOrder = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
     try {
-      const res = await fetch(`http://localhost:4000/api/orders/${id}`, { method: 'DELETE' });
-      if (res.ok) setOrders(orders.filter(o => o.id !== id));
+      const res = await fetch(`http://localhost:4000/api/orders/${id}`, { 
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Cancelled' })
+      });
+      if (res.ok) {
+        const savedOrder = await res.json();
+        setOrders(orders.map(o => o.id === id ? savedOrder : o));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -342,6 +349,7 @@ export default function AdminDashboard() {
                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
                           order.status === 'Processing' ? 'bg-blue-100 text-blue-700' :
                           order.status === 'Shipped' ? 'bg-purple-100 text-purple-700' :
+                          order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
                           {order.status}
@@ -419,6 +427,7 @@ export default function AdminDashboard() {
                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
                           order.status === 'Processing' ? 'bg-blue-100 text-blue-700' :
                           order.status === 'Shipped' ? 'bg-purple-100 text-purple-700' :
+                          order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
                           {order.status}
@@ -426,7 +435,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 text-sm text-right">
                         <button onClick={() => openOrderModal(order)} className="text-slate-400 hover:text-primary transition-colors p-1" title={t('admin.edit')}><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => handleDeleteOrder(order.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2" title={t('admin.delete')}><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => handleCancelOrder(order.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2" title="Cancel Order"><X className="w-5 h-5" /></button>
                       </td>
                     </tr>
                   ))}
@@ -551,6 +560,7 @@ export default function AdminDashboard() {
                   <option value="Processing">Processing</option>
                   <option value="Shipped">Shipped</option>
                   <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
               </div>
 

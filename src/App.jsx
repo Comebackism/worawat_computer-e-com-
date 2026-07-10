@@ -32,7 +32,7 @@ function Navbar() {
         <div className="flex gap-4 md:gap-6 items-center">
           <button onClick={toggleLanguage} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg select-none focus:outline-none hidden md:flex">
             <Globe className="w-4 h-4" />
-            {lang === 'en' ? 'TH' : 'EN'}
+            {lang === 'en' ? 'EN' : 'TH'}
           </button>
           
           <div className="hidden md:flex gap-6 items-center">
