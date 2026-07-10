@@ -26,7 +26,7 @@ export default function OrderHistory() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12 relative">
+    <div className={`max-w-7xl mx-auto px-6 py-12 relative ${selectedInvoice ? 'print:hidden' : ''}`}>
       <div className="flex items-center gap-4 mb-10">
         <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
           <Package className="w-6 h-6" />
@@ -107,8 +107,8 @@ export default function OrderHistory() {
 
       {/* Invoice Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 print:absolute print:inset-0 print:bg-white print:p-0">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full overflow-y-auto custom-scrollbar flex flex-col print:rounded-none print:shadow-none print:max-w-full print:overflow-visible">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 print:static print:bg-white print:p-0 print:block">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full overflow-y-auto custom-scrollbar flex flex-col print:rounded-none print:shadow-none print:max-w-none print:w-full print:h-auto print:overflow-visible">
             
             {/* Modal Actions (Hidden when printing) */}
             <div className="flex items-center justify-end gap-4 p-4 border-b border-slate-100 print:hidden bg-slate-50 rounded-t-2xl sticky top-0 z-10">
