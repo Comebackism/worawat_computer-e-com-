@@ -207,7 +207,7 @@ export default function AdminDashboard() {
       const row = [
         order.id,
         order.date,
-        order.customer || 'Guest',
+        order.customer || t('admin.guest'),
         order.total,
         order.status
       ].join(",");
@@ -334,14 +334,14 @@ export default function AdminDashboard() {
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-bold text-slate-800">{t('admin.recentOrders')}</h3>
-                  <button onClick={() => setActiveTab('orders')} className="text-primary text-sm font-medium hover:underline select-none focus:outline-none">View All</button>
+                  <button onClick={() => setActiveTab('orders')} className="text-primary text-sm font-medium hover:underline select-none focus:outline-none">{t('admin.viewAll')}</button>
                 </div>
                 <div className="flex-grow flex flex-col gap-4 overflow-y-auto">
                   {orders.slice(0, 4).map(order => (
                     <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                       <div>
                         <p className="font-bold text-slate-900 text-sm">{order.id}</p>
-                        <p className="text-xs text-slate-500">{order.customer || 'Guest'}</p>
+                        <p className="text-xs text-slate-500">{order.customer || t('admin.guest')}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-slate-900 text-sm">฿{order.total.toLocaleString()}</p>
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
                           order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
-                          {order.status}
+                          {t(`status.${order.status.toLowerCase()}`)}
                         </span>
                       </div>
                     </div>
@@ -420,7 +420,7 @@ export default function AdminDashboard() {
                     <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{order.id}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{order.date}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{order.customer || 'Guest'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{order.customer || t('admin.guest')}</td>
                       <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{order.total.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
@@ -430,12 +430,12 @@ export default function AdminDashboard() {
                           order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
-                          {order.status}
+                          {t(`status.${order.status.toLowerCase()}`)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-right">
                         <button onClick={() => openOrderModal(order)} className="text-slate-400 hover:text-primary transition-colors p-1" title={t('admin.edit')}><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => handleCancelOrder(order.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2" title="Cancel Order"><X className="w-5 h-5" /></button>
+                        <button onClick={() => handleCancelOrder(order.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2" title={t('admin.cancelOrder')}><X className="w-5 h-5" /></button>
                       </td>
                     </tr>
                   ))}
@@ -556,11 +556,11 @@ export default function AdminDashboard() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.status')}</label>
                 <select value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors bg-white">
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
+                  <option value="Pending">{t('status.pending')}</option>
+                  <option value="Processing">{t('status.processing')}</option>
+                  <option value="Shipped">{t('status.shipped')}</option>
+                  <option value="Delivered">{t('status.delivered')}</option>
+                  <option value="Cancelled">{t('status.cancelled')}</option>
                 </select>
               </div>
 

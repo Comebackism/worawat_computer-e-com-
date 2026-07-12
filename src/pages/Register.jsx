@@ -61,7 +61,7 @@ export default function Register() {
       <div className="mb-8 text-center select-none">
         <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-3xl tracking-tight mb-2 focus:outline-none">
           <Monitor className="w-8 h-8" />
-          TechTranquility
+          Worawat_computer
         </Link>
         <h1 className="text-2xl font-extrabold text-slate-900 mt-4">{t('register.title')}</h1>
       </div>

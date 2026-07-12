@@ -45,7 +45,7 @@ export default function Login() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-2xl tracking-tight mb-6 focus:outline-none">
             <Monitor className="w-8 h-8" />
-            TechTranquility
+            Worawat_computer
           </Link>
           <h1 className="text-2xl font-extrabold text-slate-900 mb-2">{t('login.title')}</h1>
           <p className="text-slate-500">{t('login.subtitle')}</p>

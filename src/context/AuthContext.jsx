@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Check local storage for existing session
-    const storedUser = localStorage.getItem('techtranquility_user');
+    const storedUser = localStorage.getItem('worawat_computer_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -32,8 +32,8 @@ export function AuthProvider({ children }) {
 
       const data = await response.json();
       setUser(data.user);
-      localStorage.setItem('techtranquility_user', JSON.stringify(data.user));
-      localStorage.setItem('techtranquility_token', data.token);
+      localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
+      localStorage.setItem('worawat_computer_token', data.token);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -56,8 +56,8 @@ export function AuthProvider({ children }) {
 
       const data = await response.json();
       setUser(data.user);
-      localStorage.setItem('techtranquility_user', JSON.stringify(data.user));
-      localStorage.setItem('techtranquility_token', data.token);
+      localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
+      localStorage.setItem('worawat_computer_token', data.token);
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -72,15 +72,15 @@ export function AuthProvider({ children }) {
       email: 'user@google.com'
     };
     setUser(mockGoogleUser);
-    localStorage.setItem('techtranquility_user', JSON.stringify(mockGoogleUser));
-    localStorage.setItem('techtranquility_token', 'mock-google-token-789');
+    localStorage.setItem('worawat_computer_user', JSON.stringify(mockGoogleUser));
+    localStorage.setItem('worawat_computer_token', 'mock-google-token-789');
     return { success: true };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('techtranquility_user');
-    localStorage.removeItem('techtranquility_token');
+    localStorage.removeItem('worawat_computer_user');
+    localStorage.removeItem('worawat_computer_token');
   };
 
   return (

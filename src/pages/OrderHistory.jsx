@@ -61,11 +61,11 @@ export default function OrderHistory() {
                 <div className="ml-auto">
                   {order.status === 'Delivered' ? (
                     <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold border border-green-200">
-                      <CheckCircle className="w-4 h-4" /> {t('orders.delivered')}
+                      <CheckCircle className="w-4 h-4" /> {t('status.delivered')}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold border border-amber-200">
-                      <Clock className="w-4 h-4" /> {order.status}
+                      <Clock className="w-4 h-4" /> {t(`status.${order.status.toLowerCase()}`)}
                     </span>
                   )}
                 </div>
@@ -152,9 +152,9 @@ export default function OrderHistory() {
               <div className="mb-12">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">{t('invoice.billTo')}</h3>
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-                  <p className="font-bold text-lg mb-1">Customer Name</p>
-                  <p className="text-slate-600">Customer Address Details</p>
-                  <p className="text-slate-600">City, Postal Code</p>
+                  <p className="font-bold text-lg mb-1">{t('invoice.customerNameLabel')}</p>
+                  <p className="text-slate-600">{t('invoice.customerAddressLabel')}</p>
+                  <p className="text-slate-600">{t('invoice.cityPostal')}</p>
                 </div>
               </div>
 
@@ -200,7 +200,7 @@ export default function OrderHistory() {
 
               {/* Footer */}
               <div className="mt-16 pt-8 border-t border-slate-100 text-center text-slate-400 text-sm">
-                <p>Thank you for your business!</p>
+                <p>{t('invoice.thankYou')}</p>
               </div>
 
             </div>
