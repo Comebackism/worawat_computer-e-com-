@@ -566,6 +566,18 @@ export default function AdminDashboard() {
             </div>
             
             <form onSubmit={handleEditOrder} className="p-6 space-y-4">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-sm mb-4 space-y-2">
+                <p><strong>{t('checkout.address')}:</strong> {editingOrder.shipping_address || 'N/A'}</p>
+                <p><strong>{t('checkout.paymentMethod')}:</strong> {editingOrder.payment_method === 'qr' ? 'PromptPay' : editingOrder.payment_method === 'credit' ? 'Credit Card' : 'N/A'}</p>
+                {editingOrder.payment_slip && (
+                  <div className="mt-2">
+                    <p className="font-bold mb-1">Payment Slip:</p>
+                    <a href={editingOrder.payment_slip} target="_blank" rel="noreferrer">
+                      <img src={editingOrder.payment_slip} alt="Slip" className="w-full max-h-48 object-contain rounded border border-slate-200 bg-white" />
+                    </a>
+                  </div>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.status')}</label>
                 <select value={editingOrder.status} onChange={e => setEditingOrder({...editingOrder, status: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors bg-white">

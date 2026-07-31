@@ -66,9 +66,17 @@ export default function OrderHistory() {
                     <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold border border-green-200">
                       <CheckCircle className="w-4 h-4" /> {t('status.delivered')}
                     </span>
+                  ) : order.status === 'Cancelled' ? (
+                    <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 px-3 py-1.5 rounded-full text-sm font-bold border border-red-200">
+                      <X className="w-4 h-4" /> {t('status.cancelled')}
+                    </span>
+                  ) : order.status === 'Shipped' ? (
+                    <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-sm font-bold border border-blue-200">
+                      <Package className="w-4 h-4" /> {t('status.shipped')}
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-sm font-bold border border-amber-200">
-                      <Clock className="w-4 h-4" /> {t(`status.${order.status.toLowerCase()}`)}
+                      <Clock className="w-4 h-4" /> {t('status.processing')}
                     </span>
                   )}
                 </div>

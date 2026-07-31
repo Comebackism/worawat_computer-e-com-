@@ -11,6 +11,26 @@ const port = 4000;
 app.use(cors());
 app.use(express.json());
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, 'slip-' + Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
 // Endpoints for Products
 app.get('/api/products', async (req, res) => {
   try {
@@ -97,6 +117,9 @@ app.get('/api/orders', async (req, res) => {
         u.email as customer, 
         o.status, 
         o.total,
+        o.shipping_address,
+        o.payment_method,
+        o.payment_slip,
         COALESCE(
           json_agg(
             json_build_object(
@@ -120,7 +143,7 @@ app.get('/api/orders', async (req, res) => {
       params.push(user_id);
     }
     
-    query += ` GROUP BY o.id, u.email, o.order_date, o.status, o.total ORDER BY o.order_date DESC`;
+    query += ` GROUP BY o.id, u.email, o.order_date, o.status, o.total, o.shipping_address, o.payment_method, o.payment_slip ORDER BY o.order_date DESC`;
     
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -130,27 +153,42 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
-app.post('/api/orders', async (req, res) => {
+app.post('/api/orders', upload.single('payment_slip'), async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { customer_id, total, items } = req.body; // Expects items array: [{product_id, quantity, price}]
+    const { customer_id, total, payment_method, shipping_address } = req.body; 
+    let items = [];
+    if (req.body.items) {
+      items = typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items;
+    }
+    const payment_slip = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Generate Order ID (simple logic)
-    const countRes = await client.query('SELECT COUNT(*) FROM orders');
-    const newId = `ORD-2026-${String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0')}`;
-    const date = new Date().toISOString().split('T')[0];
+    // Generate Order ID (Readable & Unique: ORD-YYYYMMDD-XXXX)
+    const dateObj = new Date();
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newId = `ORD-${yyyy}${mm}${dd}-${randomStr}`;
+    const date = dateObj.toISOString().split('T')[0];
 
     const orderRes = await client.query(
-      'INSERT INTO orders (id, customer_id, order_date, status, total) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [newId, customer_id || 1, date, 'Processing', total]
+      'INSERT INTO orders (id, customer_id, order_date, status, total, shipping_address, payment_method, payment_slip) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [newId, customer_id || null, date, 'Processing', total, shipping_address || null, payment_method || null, payment_slip]
     );
 
     if (items && items.length > 0) {
       for (const item of items) {
+        // Insert order item
         await client.query(
           'INSERT INTO orders_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
           [newId, item.product_id, item.quantity, item.price]
+        );
+        // Deduct stock
+        await client.query(
+          'UPDATE products SET stock = stock - $1 WHERE id = $2',
+          [item.quantity, item.product_id]
         );
       }
     }

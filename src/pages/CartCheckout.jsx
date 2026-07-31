@@ -11,6 +11,14 @@ export default function CartCheckout() {
   const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
+    address: '',
+    city: '',
+    postalCode: ''
+  });
+  const [paymentSlip, setPaymentSlip] = useState(null);
   const navigate = useNavigate();
 
   const shipping = 0; // Free shipping
@@ -19,22 +27,41 @@ export default function CartCheckout() {
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
+    if (!formData.firstName || !formData.lastName || !formData.address || !formData.city || !formData.postalCode) {
+      alert("Please fill in all shipping details.");
+      return;
+    }
+    if (paymentMethod === 'qr' && !paymentSlip) {
+      alert("Please upload your payment slip.");
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
+      const fullAddress = `${formData.firstName} ${formData.lastName}, ${formData.address}, ${formData.city} ${formData.postalCode}`;
+      
+      const form = new FormData();
+      form.append('customer_id', user?.id || '');
+      form.append('total', total);
+      form.append('shipping_address', fullAddress);
+      form.append('payment_method', paymentMethod);
+      form.append('items', JSON.stringify(cartItems.map(item => ({ product_id: item.id, quantity: item.quantity, price: item.price }))));
+      
+      if (paymentSlip) {
+        form.append('payment_slip', paymentSlip);
+      }
+
       const response = await fetch('http://localhost:4000/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer_id: user?.id,
-          total: total,
-          items: cartItems.map(item => ({ product_id: item.id, quantity: item.quantity, price: item.price }))
-        })
+        body: form
       });
       
       if (response.ok) {
         clearCart();
         navigate('/orders');
+      } else {
+        alert("Checkout failed. Please try again.");
       }
     } catch (err) {
       console.error('Checkout failed', err);
@@ -101,23 +128,23 @@ export default function CartCheckout() {
             <div className="grid grid-cols-2 gap-6">
               <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.firstName')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="John" />
+                <input type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="John" />
               </div>
               <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.lastName')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Doe" />
+                <input type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Doe" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.address')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="123 Hardware Street" />
+                <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="123 Hardware Street" />
               </div>
               <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.city')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Bangkok" />
+                <input type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Bangkok" />
               </div>
               <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.postalCode')}</label>
-                <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="10110" />
+                <input type="text" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="10110" />
               </div>
             </div>
           </section>
@@ -137,6 +164,20 @@ export default function CartCheckout() {
                 <span className="font-bold">{t('checkout.qrPromptPay')}</span>
               </label>
             </div>
+
+            {paymentMethod === 'qr' && (
+              <div className="mt-6 p-6 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
+                <div className="mb-4">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR Code" className="w-32 h-32 mx-auto mix-blend-multiply" />
+                  <p className="mt-2 text-sm text-slate-500">Scan to pay: ฿{Number(Math.round(total)).toLocaleString()}</p>
+                </div>
+                <label className="cursor-pointer inline-flex items-center gap-2 bg-white px-4 py-2 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
+                  <span className="text-sm font-semibold text-slate-700">Upload Slip</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={e => setPaymentSlip(e.target.files[0])} />
+                </label>
+                {paymentSlip && <p className="mt-2 text-xs text-green-600 font-medium">{paymentSlip.name} selected</p>}
+              </div>
+            )}
 
             {paymentMethod === 'credit' && (
               <div className="mt-6 space-y-4">
