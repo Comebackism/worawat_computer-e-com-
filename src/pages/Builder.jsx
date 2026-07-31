@@ -72,7 +72,7 @@ export default function Builder() {
     });
   };
 
-  const totalPrice = Object.values(buildParts).reduce((sum, item) => sum + (item?.price || 0), 0);
+  const totalPrice = Object.values(buildParts).reduce((sum, item) => sum + Number(item?.price || 0), 0);
 
   const handleAddAllToCart = () => {
     const parts = Object.values(buildParts);

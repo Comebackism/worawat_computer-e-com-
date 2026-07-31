@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Eye, EyeOff, Monitor } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -189,6 +190,33 @@ export default function Register() {
             </button>
           </div>
         </form>
+
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px bg-slate-200 flex-grow"></div>
+          <span className="text-slate-400 text-sm font-semibold select-none">OR</span>
+          <div className="h-px bg-slate-200 flex-grow"></div>
+        </div>
+
+        <div className="flex justify-center w-full mt-4">
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              // We can use the same loginWithGoogle method from AuthContext 
+              // since it checks if the user exists and creates them if not.
+              const res = await loginWithGoogle(credentialResponse.credential);
+              if (res.success) {
+                navigate('/', { replace: true });
+              } else {
+                setError('Google Signup failed. Please try again.');
+              }
+            }}
+            onError={() => {
+              setError('Google Signup was unsuccessful.');
+            }}
+            theme="outline"
+            size="large"
+            width="100%"
+          />
+        </div>
 
         <div className="mt-8 text-center">
           <p className="text-slate-500 text-sm font-medium">

@@ -47,7 +47,7 @@ export default function ProductDetail() {
           <div className="mb-6">
             <span className="text-sm font-bold text-primary tracking-wider uppercase mb-2 block">{product.brand}</span>
             <h1 className="text-4xl font-extrabold text-slate-900 mb-4 leading-tight">{product.name}</h1>
-            <div className="price-lg text-4xl mb-6">฿{product.price.toLocaleString()}</div>
+            <div className="price-lg text-4xl mb-6">฿{Number(product.price).toLocaleString()}</div>
             <p className="text-slate-600 leading-relaxed mb-8">{product.description}</p>
           </div>
 

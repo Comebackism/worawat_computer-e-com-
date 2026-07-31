@@ -138,7 +138,7 @@ export default function ProductList() {
           </div>
 
           <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-slate-700">{t('products.maxPrice')}: ฿{maxPrice.toLocaleString()}</h3>
+            <h3 className="font-semibold mb-3 text-slate-700">{t('products.maxPrice')}: ฿{Number(maxPrice).toLocaleString()}</h3>
             <input 
               type="range" 
               min="0"
@@ -227,7 +227,7 @@ export default function ProductList() {
                     ))}
                   </div>
                   <div className="mt-auto flex items-center justify-between">
-                    <span className="price-lg">฿{product.price.toLocaleString()}</span>
+                    <span className="price-lg">฿{Number(product.price).toLocaleString()}</span>
                   </div>
                 </div>
               </Link>

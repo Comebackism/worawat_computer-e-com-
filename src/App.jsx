@@ -25,37 +25,39 @@ function Navbar() {
   return (
     <nav className="bg-surface shadow-ambient sticky top-0 z-50 print:hidden">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight select-none focus:outline-none">
+        <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight select-none focus:outline-none mr-4 lg:mr-8 min-w-max">
           <Monitor className="w-6 h-6" />
           Worawat_computer
         </Link>
-        <div className="flex gap-4 md:gap-6 items-center">
+        <div className="flex gap-3 lg:gap-6 items-center ml-auto">
           <button onClick={toggleLanguage} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg select-none focus:outline-none hidden md:flex">
             <Globe className="w-4 h-4" />
             {lang === 'en' ? 'EN' : 'TH'}
           </button>
           
-          <div className="hidden md:flex gap-6 items-center">
-            <Link to="/products" className="text-slate-600 hover:text-primary transition-colors font-medium select-none focus:outline-none">{t('nav.products')}</Link>
-            <Link to="/builder" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none"><Hammer className="w-4 h-4" /> {t('nav.builder')}</Link>
+          <div className="hidden md:flex gap-4 lg:gap-6 items-center">
+            <Link to="/products" className="text-slate-600 hover:text-primary transition-colors font-medium select-none focus:outline-none whitespace-nowrap">{t('nav.products')}</Link>
+            <Link to="/builder" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none whitespace-nowrap"><Hammer className="w-4 h-4" /> {t('nav.builder')}</Link>
             
             {user ? (
               <>
-                <Link to="/orders" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
+                <Link to="/orders" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none whitespace-nowrap">
                   <History className="w-4 h-4" /> {t('nav.orders')}
                 </Link>
-                <Link to="/admin" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
-                  <Shield className="w-4 h-4" /> {t('admin.title')}
-                </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none whitespace-nowrap">
+                    <Shield className="w-4 h-4" /> {t('admin.title')}
+                  </Link>
+                )}
                 <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
-                  <span className="text-sm font-bold text-slate-700 flex items-center gap-1 select-none"><User className="w-4 h-4 text-primary" /> {user.name}</span>
-                  <button onClick={logout} className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 text-sm font-bold select-none focus:outline-none">
+                  <span className="text-sm font-bold text-slate-700 flex items-center gap-1 select-none whitespace-nowrap"><User className="w-4 h-4 text-primary" /> {user.name}</span>
+                  <button onClick={logout} className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 text-sm font-bold select-none focus:outline-none whitespace-nowrap">
                     <LogOut className="w-4 h-4" /> {t('nav.logout')}
                   </button>
                 </div>
               </>
             ) : (
-              <Link to="/login" className="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 select-none focus:outline-none">
+              <Link to="/login" className="bg-primary hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-2 select-none focus:outline-none whitespace-nowrap">
                 <LogIn className="w-4 h-4" /> {t('nav.login')}
               </Link>
             )}
@@ -93,9 +95,11 @@ function Navbar() {
               <Link to="/orders" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
                 <History className="w-5 h-5" /> {t('nav.orders')}
               </Link>
-              <Link to="/admin" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
-                <Shield className="w-5 h-5" /> {t('admin.title')}
-              </Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
+                  <Shield className="w-5 h-5" /> {t('admin.title')}
+                </Link>
+              )}
               <div className="flex flex-col gap-2 pt-2">
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2 select-none py-2"><User className="w-5 h-5 text-primary" /> {user.name}</span>
                 <button onClick={() => { logout(); closeMenu(); }} className="text-left text-slate-500 hover:text-red-500 transition-colors flex items-center gap-2 text-sm font-bold select-none focus:outline-none py-2">
@@ -129,6 +133,22 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center font-bold text-xl">Loading...</div>;
+  }
+
+  // Only allow admins to access the admin dashboard
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <LanguageProvider>
@@ -156,9 +176,9 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminDashboard />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
               </Routes>
             </main>

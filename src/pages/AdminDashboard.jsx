@@ -107,8 +107,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({ status: editingOrder.status })
       });
       if (res.ok) {
-        const savedOrder = await res.json();
-        setOrders(orders.map(o => o.id === savedOrder.id ? savedOrder : o));
+        setOrders(orders.map(o => o.id === editingOrder.id ? { ...o, status: editingOrder.status } : o));
         setIsOrderModalOpen(false);
       }
     } catch (err) {
@@ -154,10 +153,19 @@ export default function AdminDashboard() {
   const openCustomerModal = (customer = null) => {
     if (customer) {
       setEditingCustomer(customer);
-      setNewCustomer(customer);
+      setNewCustomer({ 
+        firstName: customer.first_name || '', 
+        lastName: customer.last_name || '', 
+        email: customer.email || '', 
+        phone: customer.phone || '', 
+        dob: customer.dob || '', 
+        role: customer.role || 'customer', 
+        spent: Number(customer.spent || 0),
+        password: '' 
+      });
     } else {
       setEditingCustomer(null);
-      setNewCustomer({ name: '', email: '', date: new Date().toISOString().split('T')[0], spent: 0 });
+      setNewCustomer({ firstName: '', lastName: '', email: '', phone: '', dob: '', password: '', role: 'customer', spent: 0 });
     }
     setIsCustomerModalOpen(true);
   };
@@ -181,8 +189,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({ status: 'Cancelled' })
       });
       if (res.ok) {
-        const savedOrder = await res.json();
-        setOrders(orders.map(o => o.id === id ? savedOrder : o));
+        setOrders(orders.map(o => o.id === id ? { ...o, status: 'Cancelled' } : o));
       }
     } catch (err) {
       console.error(err);
@@ -234,7 +241,7 @@ export default function AdminDashboard() {
     return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-xl text-slate-500">Loading Dashboard...</div>;
   }
 
-  const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalSales = orders.reduce((sum, order) => sum + Number(order.total), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
@@ -344,7 +351,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-slate-500">{order.customer || t('admin.guest')}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-slate-900 text-sm">฿{order.total.toLocaleString()}</p>
+                        <p className="font-bold text-slate-900 text-sm">฿{Number(order.total).toLocaleString()}</p>
                         <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
                           order.status === 'Processing' ? 'bg-blue-100 text-blue-700' :
@@ -382,7 +389,7 @@ export default function AdminDashboard() {
                     <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{product.name}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{product.category}</td>
-                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{product.price.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{Number(product.price).toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${product.stock > 10 ? 'bg-green-100 text-green-700' : product.stock > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
                           {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
@@ -421,7 +428,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{order.id}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{order.date}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{order.customer || t('admin.guest')}</td>
-                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{order.total.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{Number(order.total).toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
@@ -454,6 +461,7 @@ export default function AdminDashboard() {
                   <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.customerName')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.email')}</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Role</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.date')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.spent')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-right">{t('admin.actions')}</th>
@@ -464,8 +472,13 @@ export default function AdminDashboard() {
                     <tr key={customer.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{customer.name}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{customer.email}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${customer.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {customer.role === 'admin' ? 'Admin' : 'Customer'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-sm text-slate-500">{customer.date}</td>
-                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{customer.spent.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{Number(customer.spent || 0).toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm text-right">
                         <button onClick={() => openCustomerModal(customer)} className="text-slate-400 hover:text-primary transition-colors p-1" title={t('admin.edit')}><Edit className="w-4 h-4" /></button>
                         <button onClick={() => handleDeleteCustomer(customer.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 ml-2" title={t('admin.delete')}><Trash2 className="w-4 h-4" /></button>
@@ -589,25 +602,49 @@ export default function AdminDashboard() {
             </div>
             
             <form onSubmit={handleAddEditCustomer} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.customerName')}</label>
-                <input required type="text" value={newCustomer.name} onChange={e => setNewCustomer({...newCustomer, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.firstName') || 'First Name'}</label>
+                  <input type="text" value={newCustomer.firstName} onChange={e => setNewCustomer({...newCustomer, firstName: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.lastName') || 'Last Name'}</label>
+                  <input type="text" value={newCustomer.lastName} onChange={e => setNewCustomer({...newCustomer, lastName: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.email')}</label>
-                <input required type="email" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                <input type="email" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Password {editingCustomer && <span className="text-slate-400 font-normal">(Leave blank to keep current)</span>}</label>
+                <input type="password" value={newCustomer.password} onChange={e => setNewCustomer({...newCustomer, password: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.date')}</label>
-                  <input required type="date" value={newCustomer.date} onChange={e => setNewCustomer({...newCustomer, date: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                  <input type="tel" value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.spent')} (฿)</label>
-                  <input required type="number" min="0" value={newCustomer.spent} onChange={e => setNewCustomer({...newCustomer, spent: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                  <input type="date" value={newCustomer.dob} onChange={e => setNewCustomer({...newCustomer, dob: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <select value={newCustomer.role || 'customer'} onChange={e => setNewCustomer({...newCustomer, role: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors bg-white">
+                  <option value="customer">Customer</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.spent') || 'Spent'} (฿)</label>
+                <input type="number" min="0" step="0.01" value={newCustomer.spent} onChange={e => setNewCustomer({...newCustomer, spent: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
               </div>
 
               <div className="flex gap-3 pt-4 mt-6 border-t border-slate-100">

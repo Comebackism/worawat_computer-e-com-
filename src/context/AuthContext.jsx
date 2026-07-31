@@ -64,17 +64,28 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loginWithGoogle = () => {
-    // Mock Google Login
-    const mockGoogleUser = {
-      id: 999,
-      name: 'Google User',
-      email: 'user@google.com'
-    };
-    setUser(mockGoogleUser);
-    localStorage.setItem('worawat_computer_user', JSON.stringify(mockGoogleUser));
-    localStorage.setItem('worawat_computer_token', 'mock-google-token-789');
-    return { success: true };
+  const loginWithGoogle = async (credential) => {
+    try {
+      const response = await fetch('http://localhost:4000/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: credential }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Google Login failed');
+      }
+
+      const data = await response.json();
+      setUser(data.user);
+      localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
+      localStorage.setItem('worawat_computer_token', data.token);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const logout = () => {

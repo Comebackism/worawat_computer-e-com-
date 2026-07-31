@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { CreditCard, QrCode, Trash2, ArrowRight, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function CartCheckout() {
   const { t } = useLanguage();
   const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('credit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -24,8 +26,9 @@ export default function CartCheckout() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          customer_id: user?.id,
           total: total,
-          items: cartItems.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }))
+          items: cartItems.map(item => ({ product_id: item.id, quantity: item.quantity, price: item.price }))
         })
       });
       
@@ -164,7 +167,7 @@ export default function CartCheckout() {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-slate-600 font-medium">
                 <span>{t('checkout.subtotal')}</span>
-                <span>฿{cartTotal.toLocaleString()}</span>
+                <span>฿{Number(cartTotal).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-slate-600 font-medium">
                 <span>{t('checkout.shipping')}</span>
@@ -172,14 +175,14 @@ export default function CartCheckout() {
               </div>
               <div className="flex justify-between text-slate-600 font-medium">
                 <span>{t('checkout.tax')}</span>
-                <span>฿{Math.round(tax).toLocaleString()}</span>
+                <span>฿{Number(Math.round(tax)).toLocaleString()}</span>
               </div>
             </div>
 
             <div className="border-t border-slate-200 pt-6 mb-8">
               <div className="flex justify-between items-end">
                 <span className="text-lg font-bold text-slate-800">{t('checkout.total')}</span>
-                <span className="text-3xl font-extrabold text-primary">฿{Math.round(total).toLocaleString()}</span>
+                <span className="text-3xl font-extrabold text-primary">฿{Number(Math.round(total)).toLocaleString()}</span>
               </div>
             </div>
 

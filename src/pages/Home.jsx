@@ -102,7 +102,7 @@ export default function Home() {
                 <div className="mt-auto flex items-end justify-between pt-4 border-t border-slate-100">
                   <div>
                     <p className="text-sm text-slate-500 font-medium mb-1">{t('home.price')}</p>
-                    <span className="text-2xl font-black text-slate-900">฿{product.price.toLocaleString()}</span>
+                    <span className="text-2xl font-black text-slate-900">฿{Number(product.price).toLocaleString()}</span>
                   </div>
                   <button className="bg-slate-900 text-white hover:bg-indigo-600 p-3 rounded-xl transition-colors duration-300 shadow-md group-hover:shadow-indigo-500/30 group-hover:-translate-y-1">
                     <ShoppingCart className="w-5 h-5" />

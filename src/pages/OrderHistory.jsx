@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Package, Clock, CheckCircle, Printer, X, Monitor } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function OrderHistory() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/orders')
+    if (!user) return;
+    fetch(`http://localhost:4000/api/orders?user_id=${user.id}`)
       .then(res => res.json())
       .then(data => {
         setOrders(data);
@@ -19,7 +22,7 @@ export default function OrderHistory() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const handlePrint = () => {
     window.print();
@@ -56,7 +59,7 @@ export default function OrderHistory() {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('orders.total')}</div>
-                  <div className="font-bold text-primary text-lg">฿{order.total.toLocaleString()}</div>
+                  <div className="font-bold text-primary text-lg">฿{Number(order.total).toLocaleString()}</div>
                 </div>
                 <div className="ml-auto">
                   {order.status === 'Delivered' ? (
@@ -86,7 +89,7 @@ export default function OrderHistory() {
                       <tr key={idx} className="group">
                         <td className="py-4 font-semibold text-slate-800 group-hover:text-primary transition-colors">{item.name}</td>
                         <td className="py-4 text-center font-medium text-slate-600">{item.quantity}</td>
-                        <td className="py-4 text-right font-medium text-slate-600">฿{item.price.toLocaleString()}</td>
+                        <td className="py-4 text-right font-medium text-slate-600">฿{Number(item.price).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -173,8 +176,8 @@ export default function OrderHistory() {
                     <tr key={idx}>
                       <td className="py-4 font-semibold text-slate-800">{item.name}</td>
                       <td className="py-4 text-center font-medium text-slate-600">{item.quantity}</td>
-                      <td className="py-4 text-right font-medium text-slate-600">฿{item.price.toLocaleString()}</td>
-                      <td className="py-4 text-right font-bold text-slate-800">฿{(item.price * item.quantity).toLocaleString()}</td>
+                      <td className="py-4 text-right font-medium text-slate-600">฿{Number(item.price).toLocaleString()}</td>
+                      <td className="py-4 text-right font-bold text-slate-800">฿{Number(item.price * item.quantity).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -193,7 +196,7 @@ export default function OrderHistory() {
                   </div>
                   <div className="flex justify-between items-end border-t-2 border-slate-200 pt-4 mt-4">
                     <span className="text-lg font-bold text-slate-800">{t('orders.total')}</span>
-                    <span className="text-3xl font-black text-primary">฿{selectedInvoice.total.toLocaleString()}</span>
+                    <span className="text-3xl font-black text-primary">฿{Number(selectedInvoice.total).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
