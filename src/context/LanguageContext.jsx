@@ -185,6 +185,10 @@ const translations = {
     'login.google': 'Login with Google',
     'login.noAccount': 'Don\'t have an account?',
     'login.signup': 'Sign up',
+    'login.errorTitle': 'Sign In Failed',
+    'login.errorRequired': 'Please enter both email and password.',
+    'login.errorInvalid': 'Incorrect email or password. Please check your credentials and try again.',
+    'login.errorGoogle': 'Google Sign In was unsuccessful. Please try again.',
     
     'register.title': 'Register',
     'register.firstName': 'First Name',
@@ -198,6 +202,12 @@ const translations = {
     'register.submitting': 'Processing...',
     'register.hasAccount': 'Already have an account?',
     'register.signin': 'Sign In',
+    'register.errorTitle': 'Registration Failed',
+    'register.errorRequired': 'Please fill in all required fields.',
+    'register.errorPasswordMismatch': 'Passwords do not match. Please re-check your password.',
+    'register.errorEmailExists': 'This email address is already registered. Please sign in instead.',
+    'register.errorFailed': 'Registration failed. Please try again.',
+    'register.errorGoogle': 'Google Sign Up failed. Please try again.',
   },
   th: {
     'nav.products': 'สินค้าทั้งหมด',
@@ -380,6 +390,10 @@ const translations = {
     'login.google': 'เข้าสู่ระบบด้วย Google',
     'login.noAccount': 'ยังไม่มีบัญชีผู้ใช้?',
     'login.signup': 'สมัครสมาชิก',
+    'login.errorTitle': 'เข้าสู่ระบบไม่สำเร็จ',
+    'login.errorRequired': 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน',
+    'login.errorInvalid': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบข้อมูลแล้วลองใหม่อีกครั้ง',
+    'login.errorGoogle': 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
     
     'register.title': 'ลงทะเบียน',
     'register.firstName': 'ชื่อ',
@@ -393,6 +407,12 @@ const translations = {
     'register.submitting': 'กำลังดำเนินการ...',
     'register.hasAccount': 'มีบัญชีผู้ใช้แล้ว?',
     'register.signin': 'เข้าสู่ระบบ',
+    'register.errorTitle': 'สมัครสมาชิกไม่สำเร็จ',
+    'register.errorRequired': 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (ช่องที่มีเครื่องหมาย *)',
+    'register.errorPasswordMismatch': 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง',
+    'register.errorEmailExists': 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาใช้อีเมลอื่นหรือเข้าสู่ระบบ',
+    'register.errorFailed': 'การสมัครสมาชิกล้มเหลว กรุณาลองใหม่อีกครั้ง',
+    'register.errorGoogle': 'การสมัครสมาชิกด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
   }
 };
 

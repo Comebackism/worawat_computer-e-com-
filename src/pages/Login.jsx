@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Lock, Mail, ArrowRight, Monitor } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Monitor, AlertCircle } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ email: false, password: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login, loginWithGoogle } = useAuth();
@@ -21,22 +22,40 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    const hasEmail = Boolean(email.trim());
+    const hasPassword = Boolean(password.trim());
+
+    if (!hasEmail || !hasPassword) {
+      setFieldErrors({ email: !hasEmail, password: !hasPassword });
+      setError(t('login.errorRequired'));
       return;
     }
 
     setIsSubmitting(true);
     setError('');
+    setFieldErrors({ email: false, password: false });
 
-    const result = await login(email, password);
+    const result = await login(email.trim(), password);
     
     if (result.success) {
       navigate(from, { replace: true });
     } else {
-      setError('Invalid email or password. Please try again.');
+      setFieldErrors({ email: true, password: true });
+      setError(t('login.errorInvalid'));
       setIsSubmitting(false);
     }
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    if (error) setError('');
+    if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: false }));
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+    if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: false }));
   };
 
   return (
@@ -53,8 +72,12 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 border border-red-100">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6 flex items-start gap-3 shadow-sm animate-shake">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-sm text-red-800">{t('login.errorTitle')}</p>
+              <p className="text-xs text-red-600 mt-0.5 leading-relaxed">{error}</p>
+            </div>
           </div>
         )}
 
@@ -62,12 +85,16 @@ export default function Login() {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">{t('login.email')}</label>
             <div className="relative">
-              <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Mail className={`w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.email ? 'text-red-500' : 'text-slate-400'}`} />
               <input 
                 type="email" 
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors"
+                onChange={handleEmailChange}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-colors outline-none ${
+                  fieldErrors.email 
+                    ? 'border-red-400 bg-red-50/30 focus:border-red-500 focus:ring-2 focus:ring-red-200' 
+                    : 'border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary'
+                }`}
                 placeholder="you@example.com"
               />
             </div>
@@ -79,12 +106,16 @@ export default function Login() {
               <a href="#" className="text-sm font-semibold text-primary hover:underline focus:outline-none">{t('login.forgot')}</a>
             </div>
             <div className="relative">
-              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Lock className={`w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.password ? 'text-red-500' : 'text-slate-400'}`} />
               <input 
                 type="password" 
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors"
+                onChange={handlePasswordChange}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-colors outline-none ${
+                  fieldErrors.password 
+                    ? 'border-red-400 bg-red-50/30 focus:border-red-500 focus:ring-2 focus:ring-red-200' 
+                    : 'border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary'
+                }`}
                 placeholder="••••••••"
               />
             </div>
@@ -112,11 +143,11 @@ export default function Login() {
               if (res.success) {
                 navigate(from, { replace: true });
               } else {
-                setError('Google Login failed. Please try again.');
+                setError(t('login.errorGoogle'));
               }
             }}
             onError={() => {
-              setError('Google Login was unsuccessful.');
+              setError(t('login.errorGoogle'));
             }}
             theme="outline"
             size="large"

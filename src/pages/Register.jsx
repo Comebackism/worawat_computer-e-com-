@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Eye, EyeOff, Monitor } from 'lucide-react';
+import { Eye, EyeOff, Monitor, AlertCircle } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
 export default function Register() {
@@ -27,6 +27,7 @@ export default function Register() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -34,13 +35,13 @@ export default function Register() {
     setError('');
 
     // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all required fields');
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
+      setError(t('register.errorRequired'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.errorPasswordMismatch'));
       return;
     }
 
@@ -51,7 +52,11 @@ export default function Register() {
     if (result.success) {
       navigate('/', { replace: true });
     } else {
-      setError(result.error || 'Registration failed. Please try again.');
+      if (result.status === 409 || result.error?.toLowerCase().includes('already exists')) {
+        setError(t('register.errorEmailExists'));
+      } else {
+        setError(t('register.errorFailed'));
+      }
       setIsSubmitting(false);
     }
   };
@@ -70,8 +75,12 @@ export default function Register() {
       <div className="max-w-3xl w-full bg-surface rounded-2xl shadow-ambient border border-slate-100 p-8 sm:p-10 select-none">
         
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold mb-6 border border-red-100 text-center">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-sm text-red-800">{t('register.errorTitle')}</p>
+              <p className="text-xs text-red-600 mt-0.5 leading-relaxed">{error}</p>
+            </div>
           </div>
         )}
 
@@ -206,11 +215,11 @@ export default function Register() {
               if (res.success) {
                 navigate('/', { replace: true });
               } else {
-                setError('Google Signup failed. Please try again.');
+                setError(t('register.errorGoogle'));
               }
             }}
             onError={() => {
-              setError('Google Signup was unsuccessful.');
+              setError(t('register.errorGoogle'));
             }}
             theme="outline"
             size="large"

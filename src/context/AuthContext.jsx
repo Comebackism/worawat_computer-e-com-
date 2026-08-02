@@ -26,11 +26,12 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Login failed');
+        return { success: false, error: data.message || 'Login failed', status: response.status };
       }
 
-      const data = await response.json();
       setUser(data.user);
       localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
       localStorage.setItem('worawat_computer_token', data.token);
@@ -50,11 +51,12 @@ export function AuthProvider({ children }) {
         body: JSON.stringify(userData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Registration failed');
+        return { success: false, error: data.message || 'Registration failed', status: response.status };
       }
 
-      const data = await response.json();
       setUser(data.user);
       localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
       localStorage.setItem('worawat_computer_token', data.token);
