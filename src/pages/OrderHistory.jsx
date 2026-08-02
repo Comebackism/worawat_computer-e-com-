@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, Printer, X, Monitor } from 'lucide-react';
+import { Package, Clock, CheckCircle, Printer, X, Monitor, MapPin, Truck, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,9 +9,17 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [addressForm, setAddressForm] = useState({ address: '', city: '', postalCode: '' });
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    fetchOrders();
+  }, [user]);
+
+  const fetchOrders = () => {
     fetch(`http://localhost:4000/api/orders?user_id=${user.id}`)
       .then(res => res.json())
       .then(data => {
@@ -22,10 +30,55 @@ export default function OrderHistory() {
         console.error(err);
         setLoading(false);
       });
-  }, [user]);
+  };
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const openAddressModal = (order) => {
+    setEditingAddressId(order.id);
+    if (order.shipping_address && order.shipping_address.includes(',')) {
+      const parts = order.shipping_address.split(',').map(s => s.trim());
+      const addr = parts[0] || '';
+      const cityZip = parts[1] ? parts[1].split(' ') : [];
+      setAddressForm({
+        address: addr,
+        city: cityZip[0] || '',
+        postalCode: cityZip[1] || ''
+      });
+    } else {
+      setAddressForm({ address: '', city: '', postalCode: '' });
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    if (!addressForm.address || !addressForm.city || !addressForm.postalCode) {
+      alert("Please fill in all address fields.");
+      return;
+    }
+    
+    setIsSavingAddress(true);
+    const fullAddress = `${addressForm.address}, ${addressForm.city} ${addressForm.postalCode}`;
+    
+    try {
+      const res = await fetch(`http://localhost:4000/api/orders/${editingAddressId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shipping_address: fullAddress })
+      });
+      if (res.ok) {
+        alert(t('orders.addressUpdated') || "Shipping address updated successfully.");
+        setEditingAddressId(null);
+        fetchOrders();
+      } else {
+        alert("Failed to update address.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingAddress(false);
+    }
   };
 
   return (
@@ -102,17 +155,78 @@ export default function OrderHistory() {
                     ))}
                   </tbody>
                 </table>
-                <div className="mt-6 flex justify-end">
-                  <button 
-                    onClick={() => setSelectedInvoice(order)}
-                    className="text-primary font-bold text-sm hover:underline flex items-center gap-1 select-none focus:outline-none"
-                  >
-                    {t('orders.invoice')}
-                  </button>
+                <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('orders.shippingAddress')}</span>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      {order.shipping_address ? (
+                        <span className="text-sm font-medium text-slate-700">{order.shipping_address}</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2 py-1 rounded-md text-xs font-bold border border-amber-200">
+                          <AlertTriangle className="w-3.5 h-3.5" /> {t('orders.noAddress')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 ml-auto">
+                    {['Processing', 'Pending'].includes(order.status) && (
+                      <button 
+                        onClick={() => openAddressModal(order)}
+                        className="text-sm font-bold text-primary hover:underline focus:outline-none flex items-center gap-1"
+                      >
+                        {order.shipping_address ? t('orders.editAddress') : t('orders.addAddress')}
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setSelectedInvoice(order)}
+                      className="text-primary font-bold text-sm hover:underline flex items-center gap-1 select-none focus:outline-none"
+                    >
+                      {t('orders.invoice')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Address Edit Modal */}
+      {editingAddressId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-6 print:hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-fadeIn">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50">
+              <h3 className="font-bold text-lg flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /> {t('orders.shippingAddress')}</h3>
+              <button onClick={() => setEditingAddressId(null)} className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Address / ที่อยู่</label>
+                <input type="text" value={addressForm.address} onChange={e => setAddressForm({...addressForm, address: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="123 Street" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">City / จังหวัด</label>
+                  <input type="text" value={addressForm.city} onChange={e => setAddressForm({...addressForm, city: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Bangkok" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Postal Code / รหัสไปรษณีย์</label>
+                  <input type="text" value={addressForm.postalCode} onChange={e => setAddressForm({...addressForm, postalCode: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="10110" />
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button onClick={() => setEditingAddressId(null)} className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors focus:outline-none">Cancel</button>
+              <button 
+                onClick={handleSaveAddress} 
+                disabled={isSavingAddress}
+                className={`px-4 py-2 font-bold text-white rounded-lg transition-colors focus:outline-none ${isSavingAddress ? 'bg-slate-400 cursor-not-allowed' : 'bg-primary hover:bg-blue-700'}`}
+              >
+                {isSavingAddress ? 'Saving...' : t('orders.saveAddress')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -163,9 +277,11 @@ export default function OrderHistory() {
               <div className="mb-12">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">{t('invoice.billTo')}</h3>
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-                  <p className="font-bold text-lg mb-1">{t('invoice.customerNameLabel')}</p>
-                  <p className="text-slate-600">{t('invoice.customerAddressLabel')}</p>
-                  <p className="text-slate-600">{t('invoice.cityPostal')}</p>
+                  <p className="font-bold text-lg mb-1">{user?.first_name} {user?.last_name}</p>
+                  <p className="text-slate-600 mb-1">{user?.email}</p>
+                  <p className="text-slate-600 font-medium">
+                    {selectedInvoice.shipping_address ? selectedInvoice.shipping_address : t('orders.noAddress')}
+                  </p>
                 </div>
               </div>
 

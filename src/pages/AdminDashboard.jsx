@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { LayoutDashboard, ShoppingBag, Users, Package, TrendingUp, Download, Plus, Edit, Trash2, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Users, Package, TrendingUp, Download, Plus, Edit, Trash2, X, FileText } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const mockSalesData = [
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
                           order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
-                          {t(`status.${order.status.toLowerCase()}`)}
+                          {t(`status.${(order.status || 'Pending').toLowerCase()}`)}
                         </span>
                       </div>
                     </div>
@@ -418,6 +418,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.date')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.customerName')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('orders.total')}</th>
+                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('checkout.paymentMethod')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('orders.status')}</th>
                     <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-right">{t('admin.actions')}</th>
                   </tr>
@@ -430,6 +431,16 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-sm text-slate-500">{order.customer || t('admin.guest')}</td>
                       <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{Number(order.total).toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-600">{order.payment_method === 'qr' ? 'PromptPay' : order.payment_method === 'credit' ? 'Credit' : 'N/A'}</span>
+                          {order.payment_slip && (
+                            <a href={order.payment_slip} target="_blank" rel="noreferrer" className="text-primary hover:text-blue-700 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded text-xs font-medium" title="View Slip">
+                              <FileText className="w-3.5 h-3.5" /> Slip
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
                           order.status === 'Processing' ? 'bg-blue-100 text-blue-700' :
@@ -437,7 +448,7 @@ export default function AdminDashboard() {
                           order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-orange-100 text-orange-700'
                         }`}>
-                          {t(`status.${order.status.toLowerCase()}`)}
+                          {t(`status.${(order.status || 'Pending').toLowerCase()}`)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-right">

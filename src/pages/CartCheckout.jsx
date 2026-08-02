@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, QrCode, Trash2, ArrowRight, Plus, Minus } from 'lucide-react';
+import { CreditCard, QrCode, Trash2, ArrowRight, Plus, Minus, Truck, MapPin, Clock } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,8 @@ export default function CartCheckout() {
   const { t } = useLanguage();
   const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
-  const [paymentMethod, setPaymentMethod] = useState('credit');
+  const [shippingMode, setShippingMode] = useState('now');
+  const [paymentMethod, setPaymentMethod] = useState('qr');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.first_name || '',
@@ -27,10 +28,9 @@ export default function CartCheckout() {
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    if (!formData.firstName || !formData.lastName || !formData.address || !formData.city || !formData.postalCode) {
-      alert("Please fill in all shipping details.");
-      return;
-    }
+    
+    // Validation for shipping details removed per user request
+
     if (paymentMethod === 'qr' && !paymentSlip) {
       alert("Please upload your payment slip.");
       return;
@@ -39,12 +39,15 @@ export default function CartCheckout() {
     setIsSubmitting(true);
     
     try {
-      const fullAddress = `${formData.firstName} ${formData.lastName}, ${formData.address}, ${formData.city} ${formData.postalCode}`;
+      const hasAddressData = formData.address || formData.city || formData.postalCode;
+      const fullAddress = (shippingMode === 'now' && hasAddressData)
+        ? `${formData.firstName} ${formData.lastName}, ${formData.address}, ${formData.city} ${formData.postalCode}`.replace(/^[\s,]+|[\s,]+$/g, '')
+        : '';
       
       const form = new FormData();
       form.append('customer_id', user?.id || '');
       form.append('total', total);
-      form.append('shipping_address', fullAddress);
+      if (fullAddress) form.append('shipping_address', fullAddress);
       form.append('payment_method', paymentMethod);
       form.append('items', JSON.stringify(cartItems.map(item => ({ product_id: item.id, quantity: item.quantity, price: item.price }))));
       
@@ -91,7 +94,7 @@ export default function CartCheckout() {
           
           {/* Cart Items */}
           <section className="bg-surface rounded-2xl shadow-ambient p-8 border border-slate-100">
-            <h2 className="text-xl font-bold mb-6 pb-4 border-b border-slate-100">{t('checkout.orderItems')}</h2>
+            <h2 className="text-xl font-bold mb-6 pb-4 border-b border-slate-100 flex items-center gap-2"><Truck className="w-6 h-6 text-primary"/> {t('checkout.orderItems')}</h2>
             <div className="space-y-6">
               {cartItems.map(item => (
                 <div key={item.id} className="flex gap-6 items-center">
@@ -124,79 +127,75 @@ export default function CartCheckout() {
 
           {/* Shipping Form */}
           <section className="bg-surface rounded-2xl shadow-ambient p-8 border border-slate-100">
-            <h2 className="text-xl font-bold mb-6 pb-4 border-b border-slate-100">{t('checkout.shippingInfo')}</h2>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.firstName')}</label>
-                <input type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="John" />
-              </div>
-              <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.lastName')}</label>
-                <input type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Doe" />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.address')}</label>
-                <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="123 Hardware Street" />
-              </div>
-              <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.city')}</label>
-                <input type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Bangkok" />
-              </div>
-              <div className="col-span-2 md:col-span-1">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.postalCode')}</label>
-                <input type="text" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="10110" />
+            <div className="flex flex-wrap items-center justify-between mb-6 pb-4 border-b border-slate-100 gap-4">
+              <h2 className="text-xl font-bold flex items-center gap-2"><MapPin className="w-6 h-6 text-primary" /> {t('checkout.shippingInfo')}</h2>
+              
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button 
+                  onClick={() => setShippingMode('now')} 
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus:outline-none ${shippingMode === 'now' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {t('checkout.shippingModeNow')}
+                </button>
+                <button 
+                  onClick={() => setShippingMode('later')} 
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors focus:outline-none ${shippingMode === 'later' ? 'bg-white shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  {t('checkout.shippingModeLater')}
+                </button>
               </div>
             </div>
+
+            {shippingMode === 'now' ? (
+              <div className="grid grid-cols-2 gap-6 animate-fadeIn">
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.firstName')}</label>
+                  <input type="text" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors" placeholder="John" />
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.lastName')}</label>
+                  <input type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors" placeholder="Doe" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.address')}</label>
+                  <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors" placeholder="123 Hardware Street" />
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.city')}</label>
+                  <input type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors" placeholder="Bangkok" />
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.postalCode')}</label>
+                  <input type="text" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors" placeholder="10110" />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center animate-fadeIn flex flex-col items-center gap-3">
+                <Clock className="w-10 h-10 text-amber-500 mb-2" />
+                <p className="font-semibold text-amber-800 text-lg">{t('checkout.shippingModeLater')}</p>
+                <p className="text-amber-700/80 text-sm">{t('checkout.shippingModeLaterDesc')}</p>
+              </div>
+            )}
           </section>
 
           {/* Payment Method */}
           <section className="bg-surface rounded-2xl shadow-ambient p-8 border border-slate-100">
-            <h2 className="text-xl font-bold mb-6 pb-4 border-b border-slate-100">{t('checkout.paymentMethod')}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all select-none focus:outline-none ${paymentMethod === 'credit' ? 'border-primary bg-blue-50/50 text-primary' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}>
-                <input type="radio" name="payment" className="hidden" checked={paymentMethod === 'credit'} onChange={() => setPaymentMethod('credit')} />
-                <CreditCard className="w-8 h-8" />
-                <span className="font-bold">{t('checkout.creditCard')}</span>
+            <h2 className="text-xl font-bold mb-6 pb-4 border-b border-slate-100 flex items-center gap-2">
+              <QrCode className="w-6 h-6 text-primary" />
+              {t('checkout.paymentMethod')} - {t('checkout.qrPromptPay')}
+            </h2>
+
+            <div className="p-6 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
+              <div className="mb-4">
+                <img src="/images/qrpormmpay.jpg" alt="QR Code PromptPay" className="w-56 h-auto mx-auto rounded-lg shadow-sm" />
+                <p className="mt-2 text-sm text-slate-500">Scan to pay: ฿{Number(Math.round(total)).toLocaleString()}</p>
+              </div>
+              <label className="cursor-pointer inline-flex items-center gap-2 bg-white px-4 py-2 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
+                <span className="text-sm font-semibold text-slate-700">Upload Slip</span>
+                <input type="file" className="hidden" accept="image/*" onChange={e => setPaymentSlip(e.target.files[0])} />
               </label>
-              <label className={`border-2 rounded-xl p-4 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all select-none focus:outline-none ${paymentMethod === 'qr' ? 'border-primary bg-blue-50/50 text-primary' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}>
-                <input type="radio" name="payment" className="hidden" checked={paymentMethod === 'qr'} onChange={() => setPaymentMethod('qr')} />
-                <QrCode className="w-8 h-8" />
-                <span className="font-bold">{t('checkout.qrPromptPay')}</span>
-              </label>
+              {paymentSlip && <p className="mt-2 text-xs text-green-600 font-medium">{paymentSlip.name} selected</p>}
             </div>
-
-            {paymentMethod === 'qr' && (
-              <div className="mt-6 p-6 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
-                <div className="mb-4">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR Code" className="w-32 h-32 mx-auto mix-blend-multiply" />
-                  <p className="mt-2 text-sm text-slate-500">Scan to pay: ฿{Number(Math.round(total)).toLocaleString()}</p>
-                </div>
-                <label className="cursor-pointer inline-flex items-center gap-2 bg-white px-4 py-2 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">
-                  <span className="text-sm font-semibold text-slate-700">Upload Slip</span>
-                  <input type="file" className="hidden" accept="image/*" onChange={e => setPaymentSlip(e.target.files[0])} />
-                </label>
-                {paymentSlip && <p className="mt-2 text-xs text-green-600 font-medium">{paymentSlip.name} selected</p>}
-              </div>
-            )}
-
-            {paymentMethod === 'credit' && (
-              <div className="mt-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.cardNumber')}</label>
-                  <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-mono" placeholder="0000 0000 0000 0000" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.expiryDate')}</label>
-                    <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-mono" placeholder="MM/YY" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('checkout.cvc')}</label>
-                    <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-mono" placeholder="123" />
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
         </div>
 

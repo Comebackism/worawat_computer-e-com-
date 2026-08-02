@@ -214,12 +214,37 @@ app.put('/api/orders/:id', async (req, res) => {
   try {
     await client.query('BEGIN');
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, shipping_address } = req.body;
     
-    const result = await client.query('UPDATE orders SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
+    let updateQuery = 'UPDATE orders SET ';
+    const updateParams = [];
+    let idx = 1;
+
+    if (status !== undefined) {
+      updateQuery += `status = $${idx++}, `;
+      updateParams.push(status);
+    }
+    if (shipping_address !== undefined) {
+      updateQuery += `shipping_address = $${idx++}, `;
+      updateParams.push(shipping_address);
+    }
+
+    if (updateParams.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'No valid fields provided for update' });
+    }
+
+    // remove trailing comma and space
+    updateQuery = updateQuery.slice(0, -2);
+    updateQuery += ` WHERE id = $${idx} RETURNING *`;
+    updateParams.push(id);
+    
+    const result = await client.query(updateQuery, updateParams);
     
     if (result.rows.length > 0) {
-      await client.query('INSERT INTO order_history (order_id, status) VALUES ($1, $2)', [id, status]);
+      if (status !== undefined) {
+        await client.query('INSERT INTO order_history (order_id, status) VALUES ($1, $2)', [id, status]);
+      }
       await client.query('COMMIT');
       res.json(result.rows[0]);
     } else {

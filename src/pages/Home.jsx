@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Cpu, Monitor, Zap, ArrowRight, Star, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Cpu, Monitor, Zap, ArrowRight, Star, ShoppingCart } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Home() {
   const { t } = useLanguage();
   const [products, setProducts] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const banners = [
+    "/images/banner1.png",
+    "/images/banner2.png",
+    "/images/banner3.png"
+  ];
 
   useEffect(() => {
     fetch('http://localhost:4000/api/products')
@@ -14,29 +21,49 @@ export default function Home() {
       .catch(err => console.error(err));
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
   return (
     <div className="w-full bg-slate-50 min-h-screen">
-      {/* Hero Section with Animation */}
-      <section className="relative overflow-hidden bg-slate-900 text-white py-32">
-        {/* Animated Background Elements */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-500/20 rounded-full blur-[120px] mix-blend-screen translate-x-1/3 -translate-y-1/4 animate-[pulse_8s_ease-in-out_infinite]" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[100px] mix-blend-screen -translate-x-1/3 translate-y-1/4 animate-[pulse_10s_ease-in-out_infinite_reverse]" />
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 mb-6 leading-tight tracking-tight select-none animate-[slideInDown_1s_ease-out]">
-              {t('home.hero.title')}
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-300 mb-10 font-medium select-none max-w-2xl animate-[fadeIn_1.5s_ease-out]">
-              {t('home.hero.subtitle')}
-            </p>
-            <div className="flex gap-4 animate-[slideInUp_1s_ease-out]">
-              <Link to="/products" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] hover:-translate-y-1 select-none focus:outline-none group">
-                {t('home.hero.cta')} 
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
+      {/* Hero Carousel */}
+      <section className="relative w-full h-[200px] sm:h-[280px] md:h-[400px] lg:h-[450px] overflow-hidden bg-slate-900 group">
+        {banners.map((banner, index) => (
+          <div 
+            key={index} 
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+          >
+            <img src={banner} alt={`Sale Banner ${index + 1}`} className="w-full h-full object-cover" />
           </div>
+        ))}
+        
+        {/* Navigation Arrows */}
+        <button 
+          onClick={() => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length)}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:outline-none"
+        >
+          <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+        </button>
+        <button 
+          onClick={() => setCurrentSlide((prev) => (prev + 1) % banners.length)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:outline-none"
+        >
+          <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+        </button>
+
+        {/* Dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {banners.map((_, index) => (
+            <button 
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full transition-all duration-300 focus:outline-none ${index === currentSlide ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`}
+            />
+          ))}
         </div>
       </section>
 

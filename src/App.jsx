@@ -24,10 +24,9 @@ function Navbar() {
   
   return (
     <nav className="bg-surface shadow-ambient sticky top-0 z-50 print:hidden">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight select-none focus:outline-none mr-4 lg:mr-8 min-w-max">
-          <Monitor className="w-6 h-6" />
-          Worawat_computer
+      <div className="max-w-7xl mx-auto px-6 h-28 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 select-none focus:outline-none mr-4 lg:mr-8 min-w-max">
+          <img src="/images/logoworawat compter.png" alt="Worawat Computer" className="h-24 w-auto object-contain" />
         </Link>
         <div className="flex gap-3 lg:gap-6 items-center ml-auto">
           <button onClick={toggleLanguage} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg select-none focus:outline-none hidden md:flex">
