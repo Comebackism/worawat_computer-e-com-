@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   // Add/Edit Product State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [newProduct, setNewProduct] = useState({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '' });
+  const [newProduct, setNewProduct] = useState({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '', specs: [] });
   
   // Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [newCustomer, setNewCustomer] = useState({ name: '', email: '', date: '', spent: '' });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [adminCategoryFilter, setAdminCategoryFilter] = useState('All');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +93,7 @@ export default function AdminDashboard() {
       setNewProduct(product);
     } else {
       setEditingProduct(null);
-      setNewProduct({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '' });
+      setNewProduct({ name: '', category: '', brand: '', price: '', stock: '', description: '', image: '', specs: [] });
     }
     setIsModalOpen(true);
   };
@@ -372,21 +373,44 @@ export default function AdminDashboard() {
 
         {/* Products Tab */}
         {activeTab === 'products' && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.productName')}</th>
-                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.category')}</th>
-                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.price')}</th>
-                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.stock')}</th>
-                    <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-right">{t('admin.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50 transition-colors">
+          <div className="space-y-4">
+            <div className="flex justify-end bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-slate-600">กรองตามหมวดหมู่:</span>
+                <select 
+                  value={adminCategoryFilter}
+                  onChange={(e) => setAdminCategoryFilter(e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white text-sm cursor-pointer"
+                >
+                  <option value="All">ทั้งหมด (All)</option>
+                  <option value="CPU">CPU</option>
+                  <option value="GPU">GPU</option>
+                  <option value="RAM">RAM</option>
+                  <option value="Motherboard">Motherboard</option>
+                  <option value="Storage">Storage</option>
+                  <option value="Power Supply">Power Supply</option>
+                  <option value="Case">Case</option>
+                  <option value="Monitor">Monitor</option>
+                  <option value="Cooling">Cooling</option>
+                  <option value="Mouse">Mouse</option>
+                </select>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.productName')}</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.category')}</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.price')}</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm">{t('admin.stock')}</th>
+                      <th className="px-6 py-4 font-semibold text-slate-600 text-sm text-right">{t('admin.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {products.filter(p => adminCategoryFilter === 'All' || p.category === adminCategoryFilter).map((product) => (
+                      <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">{product.name}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">{product.category}</td>
                       <td className="px-6 py-4 text-sm text-slate-900 font-medium">฿{Number(product.price).toLocaleString()}</td>
@@ -405,6 +429,7 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
+        </div>
         )}
 
         {/* Orders Tab */}
@@ -514,42 +539,88 @@ export default function AdminDashboard() {
               </button>
             </div>
             
-            <form onSubmit={handleAddEditProduct} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productName')}</label>
-                <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.category')}</label>
-                  <input required type="text" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+            <form onSubmit={handleAddEditProduct} className="p-6">
+              <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                
+                {/* ข้อมูลพื้นฐาน */}
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+                  <h4 className="font-bold text-slate-700 border-b border-slate-200 pb-2 mb-3 text-sm">ข้อมูลทั่วไป</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productName')}</label>
+                    <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.category')}</label>
+                      <input required type="text" list="category-options" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" placeholder="เลือกหรือพิมพ์หมวดหมู่..." />
+                      <datalist id="category-options">
+                        <option value="CPU" />
+                        <option value="GPU" />
+                        <option value="RAM" />
+                        <option value="Motherboard" />
+                        <option value="Storage" />
+                        <option value="Power Supply" />
+                        <option value="Case" />
+                        <option value="Monitor" />
+                        <option value="Cooling" />
+                        <option value="Mouse" />
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Brand</label>
+                      <input required type="text" list="brand-options" value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" placeholder="เลือกหรือพิมพ์แบรนด์..." />
+                      <datalist id="brand-options">
+                        <option value="Intel" />
+                        <option value="AMD" />
+                        <option value="NVIDIA" />
+                        <option value="ASUS" />
+                        <option value="MSI" />
+                        <option value="Gigabyte" />
+                        <option value="Corsair" />
+                        <option value="G.Skill" />
+                        <option value="Kingston" />
+                        <option value="Samsung" />
+                        <option value="WD" />
+                        <option value="NZXT" />
+                        <option value="Cooler Master" />
+                      </datalist>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Brand</label>
-                  <input required type="text" value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea rows="2" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none"></textarea>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.price')} (฿)</label>
-                  <input required type="number" min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                {/* รายละเอียดและสเปค */}
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+                  <h4 className="font-bold text-slate-700 border-b border-slate-200 pb-2 mb-3 text-sm">รายละเอียดและข้อมูลทางเทคนิค</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Description (คำบรรยายสินค้า)</label>
+                    <textarea rows="2" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none"></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Specs (ข้อมูลจำเพาะ) <span className="text-xs text-slate-400 font-normal ml-1">- ขึ้นบรรทัดใหม่สำหรับแต่ละข้อ</span></label>
+                    <textarea rows="3" value={(newProduct.specs || []).join('\n')} onChange={e => setNewProduct({...newProduct, specs: e.target.value.split('\n')})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none" placeholder="เช่น:&#10;Core i9-13900K&#10;24 Cores / 32 Threads"></textarea>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.stock')}</label>
-                  <input required type="number" min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.imageUrl')}</label>
-                <input type="text" placeholder="https://..." value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                {/* สต็อกและราคา */}
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+                  <h4 className="font-bold text-slate-700 border-b border-slate-200 pb-2 mb-3 text-sm">การขาย</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.price')} (฿)</label>
+                      <input required type="number" min="0" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.stock')}</label>
+                      <input required type="number" min="0" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.imageUrl')}</label>
+                    <input type="text" placeholder="https://..." value={newProduct.image} onChange={e => setNewProduct({...newProduct, image: e.target.value})} className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 mt-6 border-t border-slate-100">

@@ -131,7 +131,7 @@ export default function ProductDetail() {
                 <th className="py-4 px-8 w-1/3 font-semibold text-slate-600 bg-slate-50/30">{t('product.features')}</th>
                 <td className="py-4 px-8 tech-text text-slate-800">
                   <ul className="list-disc list-inside space-y-1">
-                    {product.specs.map((spec, i) => (
+                    {(product.specs || []).map((spec, i) => (
                       <li key={i}>{spec}</li>
                     ))}
                   </ul>

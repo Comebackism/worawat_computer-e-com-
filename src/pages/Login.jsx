@@ -63,9 +63,8 @@ export default function Login() {
       <div className="max-w-md w-full bg-surface rounded-2xl shadow-ambient border border-slate-100 p-8 select-none">
         
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-2xl tracking-tight mb-6 focus:outline-none">
-            <Monitor className="w-8 h-8" />
-            Worawat_computer
+          <Link to="/" className="inline-flex items-center justify-center mb-6 focus:outline-none">
+            <img src="/images/logoworawat compter.png" alt="Worawat_computer" className="h-20 sm:h-24 object-contain" />
           </Link>
           <h1 className="text-2xl font-extrabold text-slate-900 mb-2">{t('login.title')}</h1>
           <p className="text-slate-500">{t('login.subtitle')}</p>
@@ -101,9 +100,8 @@ export default function Login() {
           </div>
           
           <div>
-            <div className="flex justify-between mb-2">
+            <div className="mb-2">
               <label className="block text-sm font-semibold text-slate-700">{t('login.password')}</label>
-              <a href="#" className="text-sm font-semibold text-primary hover:underline focus:outline-none">{t('login.forgot')}</a>
             </div>
             <div className="relative">
               <Lock className={`w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.password ? 'text-red-500' : 'text-slate-400'}`} />

@@ -77,7 +77,8 @@ export default function ProductList() {
   const filteredProducts = products.filter(product => {
     const brandStr = product.brand || '';
     const categoryStr = product.category || '';
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const nameStr = product.name || '';
+    const matchesSearch = nameStr.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           brandStr.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(brandStr);
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(categoryStr);
@@ -222,7 +223,7 @@ export default function ProductList() {
                 <div className="p-6 flex flex-col flex-grow border-t border-slate-50">
                   <h3 className="font-bold text-lg mb-2 text-slate-800 leading-tight">{product.name}</h3>
                   <div className="flex flex-wrap gap-1.5 mb-4">
-                    {product.specs.slice(0, 2).map((spec, idx) => (
+                    {(product.specs || []).slice(0, 2).map((spec, idx) => (
                       <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border border-blue-100">{spec}</span>
                     ))}
                   </div>
