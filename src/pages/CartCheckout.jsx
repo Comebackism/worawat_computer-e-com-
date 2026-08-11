@@ -186,8 +186,10 @@ export default function CartCheckout() {
             </h2>
 
             <div className="p-6 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
-              <div className="mb-4">
-                <img src="/images/qrpormmpay.jpg" alt="QR Code PromptPay" className="w-56 h-auto mx-auto rounded-lg shadow-sm" />
+              <div className="mb-4 text-center">
+                <img src={`https://promptpay.io/0828072613/${total}.png`} alt="QR Code PromptPay" className="w-56 h-auto mx-auto rounded-lg shadow-sm bg-white" />
+                <p className="mt-4 font-bold text-lg text-slate-800">นาย วรวัฒน์ บุญเรือง</p>
+                <p className="text-sm font-medium text-slate-500">PromptPay: 082 807 2613</p>
                 <p className="mt-2 text-sm text-slate-500">Scan to pay: ฿{Number(Math.round(total)).toLocaleString()}</p>
               </div>
               <label className="cursor-pointer inline-flex items-center gap-2 bg-white px-4 py-2 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors">

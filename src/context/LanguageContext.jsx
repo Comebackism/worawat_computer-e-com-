@@ -24,6 +24,7 @@ const translations = {
     
     'products.title': 'All Hardware',
     'products.search': 'Search products...',
+    'products.category': 'Category',
     'products.brand': 'Brand',
     'products.maxPrice': 'Max Price',
     'products.reset': 'Reset Filters',
@@ -182,7 +183,7 @@ const translations = {
     'cat.gear': 'Gaming Gear',
     'cat.software': 'Software',
     
-    'login.title': 'Welcome Back',
+    'login.title': 'Welcome',
     'login.subtitle': 'Sign in to manage your orders and checkout.',
     'login.email': 'Email Address',
     'login.password': 'Password',
@@ -236,6 +237,7 @@ const translations = {
     
     'products.title': 'อุปกรณ์ทั้งหมด',
     'products.search': 'ค้นหาสินค้า...',
+    'products.category': 'หมวดหมู่',
     'products.brand': 'แบรนด์',
     'products.maxPrice': 'ราคาสูงสุด',
     'products.reset': 'ล้างตัวกรอง',
@@ -396,7 +398,7 @@ const translations = {
     'cat.gear': 'เกมมิ่งเกียร์',
     'cat.software': 'ซอฟต์แวร์',
     
-    'login.title': 'ยินดีต้อนรับกลับมา',
+    'login.title': 'ยินดีต้อนรับ',
     'login.subtitle': 'เข้าสู่ระบบเพื่อจัดการคำสั่งซื้อและการชำระเงิน',
     'login.email': 'อีเมล',
     'login.password': 'รหัสผ่าน',
