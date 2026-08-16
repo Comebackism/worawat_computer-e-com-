@@ -9,7 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Builder from './pages/Builder';
 import AdminDashboard from './pages/AdminDashboard';
-import { ShoppingCart, Monitor, History, LogIn, User, LogOut, Globe, Menu, X, Hammer, Shield } from 'lucide-react';
+import { ShoppingCart, Monitor, History, LogIn, User, LogOut, Menu, X, Hammer, Shield } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -18,7 +18,7 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logout } = useAuth();
-  const { lang, toggleLanguage, t } = useLanguage();
+  const { lang, t } = useLanguage();
   
   const closeMenu = () => setIsMobileMenuOpen(false);
   
@@ -29,10 +29,6 @@ function Navbar() {
           <img src="/images/logoworawat compter.png" alt="Worawat Computer" className="h-24 w-auto object-contain" />
         </Link>
         <div className="flex gap-3 lg:gap-6 items-center ml-auto">
-          <button onClick={toggleLanguage} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg select-none focus:outline-none hidden md:flex">
-            <Globe className="w-4 h-4" />
-            {lang === 'en' ? 'EN' : 'TH'}
-          </button>
           
           <div className="hidden md:flex gap-4 lg:gap-6 items-center">
             <Link to="/products" className="text-slate-600 hover:text-primary transition-colors font-medium select-none focus:outline-none whitespace-nowrap">{t('nav.products')}</Link>
@@ -81,10 +77,6 @@ function Navbar() {
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-surface border-t border-slate-100 px-6 py-4 flex flex-col gap-4 shadow-lg absolute w-full left-0">
-          <button onClick={() => { toggleLanguage(); closeMenu(); }} className="text-slate-600 hover:text-primary transition-colors flex items-center justify-center gap-2 font-bold text-sm bg-slate-100 hover:bg-slate-200 px-3 py-3 rounded-lg select-none focus:outline-none w-full">
-            <Globe className="w-4 h-4" />
-            {lang === 'en' ? 'Switch to Thai (TH)' : 'Switch to English (EN)'}
-          </button>
           
           <Link to="/products" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors font-medium select-none focus:outline-none py-2 border-b border-slate-50">{t('nav.products')}</Link>
           <Link to="/builder" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50"><Hammer className="w-5 h-5" /> {t('nav.builder')}</Link>

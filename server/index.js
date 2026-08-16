@@ -11,6 +11,15 @@ const port = 4000;
 app.use(cors());
 app.use(express.json());
 
+const { swaggerUi, swaggerSpec } = require('./Config/swaggerConfig');
+// Swagger page
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Docs in JSON format
+app.get('/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -32,6 +41,24 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Endpoints for Products
+/**
+ * @openapi
+ * /api/products:
+ *   get:
+ *     tags: [Product]
+ *     summary: Get all products
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Product'
+ *       500:
+ *         description: Internal server error
+ */
 app.get('/api/products', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM products ORDER BY id ASC');
@@ -42,6 +69,30 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   get:
+ *     tags: [Product]
+ *     summary: Get product by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Internal server error
+ */
 app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -57,6 +108,24 @@ app.get('/api/products/:id', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/products:
+ *   post:
+ *     tags: [Product]
+ *     summary: Create a product
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       201:
+ *         description: Created
+ *       500:
+ *         description: Internal server error
+ */
 app.post('/api/products', async (req, res) => {
   try {
     const { name, brand, price, category, memory, description, image, stock, specs } = req.body;
@@ -71,6 +140,32 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   put:
+ *     tags: [Product]
+ *     summary: Update a product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       200:
+ *         description: Updated
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Internal server error
+ */
 app.put('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -90,6 +185,26 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   delete:
+ *     tags: [Product]
+ *     summary: Delete a product
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Deleted
+ *       404:
+ *         description: Product not found
+ *       500:
+ *         description: Internal server error
+ */
 app.delete('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;

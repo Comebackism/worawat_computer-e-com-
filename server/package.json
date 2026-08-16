@@ -16,6 +16,8 @@
     "express": "^5.2.1",
     "google-auth-library": "^10.9.1",
     "multer": "^2.2.0",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   }
 }
