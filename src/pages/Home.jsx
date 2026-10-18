@@ -1,18 +1,48 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Cpu, Monitor, Zap, ArrowRight, Star, ShoppingCart } from 'lucide-react';
+import { ChevronRight, Cpu, Monitor, Zap, ArrowRight, Star, ShoppingCart, Check, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useCart } from '../context/CartContext';
+import { api } from '../lib/api';
 
 export default function Home() {
   const { t } = useLanguage();
+  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [justAdded, setJustAdded] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/products')
-      .then(res => res.json())
-      .then(data => setProducts(data.slice(0, 3)))
-      .catch(err => console.error(err));
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+
+    api('/products')
+      .then((data) => {
+        if (cancelled) return;
+        setProducts((Array.isArray(data) ? data : []).slice(0, 3));
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  const handleQuickAdd = (event, product) => {
+    event.preventDefault();
+    event.stopPropagation();
+    addToCart(product, 1);
+    setJustAdded(product.id);
+    setTimeout(() => setJustAdded((current) => (current === product.id ? null : current)), 2000);
+  };
 
   return (
     <div className="w-full bg-slate-50 min-h-screen">
@@ -74,44 +104,96 @@ export default function Home() {
             {t('home.viewAll')} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <Link to={`/product/${product.id}`} key={product.id} 
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-slate-100 flex flex-col select-none focus:outline-none group relative">
-              
-              {/* Image Container */}
-              <div className="h-72 overflow-hidden bg-slate-50 relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-                
-                {/* Badges */}
-                <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                  <div className="bg-white/95 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {product.brand}
-                  </div>
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100 animate-pulse">
+                <div className="h-72 bg-slate-200" />
+                <div className="p-6 space-y-4">
+                  <div className="h-4 w-24 bg-slate-200 rounded" />
+                  <div className="h-6 w-3/4 bg-slate-200 rounded" />
+                  <div className="h-8 w-28 bg-slate-200 rounded" />
                 </div>
               </div>
-              
-              {/* Content */}
-              <div className="p-6 flex flex-col flex-grow relative bg-white">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">{product.category}</span>
-                </div>
-                <h3 className="font-extrabold text-xl mb-3 text-slate-800 line-clamp-2 group-hover:text-indigo-600 transition-colors">{product.name}</h3>
-                
-                <div className="mt-auto flex items-end justify-between pt-4 border-t border-slate-100">
-                  <div>
-                    <p className="text-sm text-slate-500 font-medium mb-1">{t('home.price')}</p>
-                    <span className="text-2xl font-black text-slate-900">฿{product.price.toLocaleString()}</span>
+            ))}
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="bg-white border border-rose-100 rounded-2xl p-12 text-center shadow-sm">
+            <p className="text-rose-600 font-semibold mb-4">{t('common.loadError')}</p>
+            <button onClick={() => setReloadKey((k) => k + 1)} className="inline-flex items-center gap-2 bg-slate-900 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold transition-colors">
+              <RotateCcw className="w-4 h-4" /> {t('common.retry')}
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && products.length === 0 && (
+          <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
+            <p className="text-slate-500 font-semibold">{t('products.empty')}</p>
+          </div>
+        )}
+
+        {!loading && !error && products.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {products.map((product) => {
+              const outOfStock = Number(product.stock) <= 0;
+              const added = justAdded === product.id;
+              return (
+                <Link to={`/product/${product.id}`} key={product.id}
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-slate-100 flex flex-col select-none focus:outline-none group relative">
+                  {/* Image Container */}
+                  <div className="h-72 overflow-hidden bg-slate-50 relative">
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
+
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+                      <div className="bg-white/95 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
+                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {product.brand}
+                      </div>
+                      {outOfStock && (
+                        <div className="bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                          {t('product.outOfStock')}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button className="bg-slate-900 text-white hover:bg-indigo-600 p-3 rounded-xl transition-colors duration-300 shadow-md group-hover:shadow-indigo-500/30 group-hover:-translate-y-1">
-                    <ShoppingCart className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+
+                  {/* Content */}
+                  <div className="p-6 flex flex-col flex-grow relative bg-white">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">{product.category}</span>
+                    </div>
+                    <h3 className="font-extrabold text-xl mb-3 text-slate-800 line-clamp-2 group-hover:text-indigo-600 transition-colors">{product.name}</h3>
+
+                    <div className="mt-auto flex items-end justify-between pt-4 border-t border-slate-100">
+                      <div>
+                        <p className="text-sm text-slate-500 font-medium mb-1">{t('home.price')}</p>
+                        <span className="text-2xl font-black text-slate-900">฿{Number(product.price).toLocaleString()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleQuickAdd(e, product)}
+                        disabled={outOfStock}
+                        aria-label={t('product.addToCart')}
+                        className={`p-3 rounded-xl transition-colors duration-300 shadow-md group-hover:-translate-y-1 ${
+                          outOfStock
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : added
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-900 text-white hover:bg-indigo-600 group-hover:shadow-indigo-500/30'
+                        }`}
+                      >
+                        {added ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
     </div>
   );

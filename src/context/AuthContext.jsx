@@ -1,93 +1,77 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { api } from '../lib/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
+
+export const USER_KEY = 'worawat_computer_user';
+export const TOKEN_KEY = 'worawat_computer_token';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for existing session
-    const storedUser = localStorage.getItem('worawat_computer_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const stored = localStorage.getItem(USER_KEY);
+      if (stored) setUser(JSON.parse(stored));
+    } catch {
+      localStorage.removeItem(USER_KEY);
     }
     setLoading(false);
   }, []);
 
+  const persistSession = (nextUser, token) => {
+    setUser(nextUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+  };
+
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:4000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
-      localStorage.setItem('worawat_computer_token', data.token);
-      return { success: true };
+      const data = await api('/login', { method: 'POST', body: { email, password } });
+      persistSession(data.user, data.token);
+      return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
-  const register = async (userData) => {
+  const register = async (formData) => {
     try {
-      const response = await fetch('http://localhost:4000/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
-      const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('worawat_computer_user', JSON.stringify(data.user));
-      localStorage.setItem('worawat_computer_token', data.token);
-      return { success: true };
+      const data = await api('/register', { method: 'POST', body: formData });
+      persistSession(data.user, data.token);
+      return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
+  // Demo shortcut while there is no real OAuth client wired up.
   const loginWithGoogle = () => {
-    // Mock Google Login
-    const mockGoogleUser = {
+    const demoUser = {
       id: 999,
-      name: 'Google User',
-      email: 'user@google.com'
+      name: 'Google Demo User',
+      email: 'google.demo@example.com',
+      role: 'customer',
     };
-    setUser(mockGoogleUser);
-    localStorage.setItem('worawat_computer_user', JSON.stringify(mockGoogleUser));
-    localStorage.setItem('worawat_computer_token', 'mock-google-token-789');
-    return { success: true };
+    persistSession(demoUser, 'mock-google-token');
+    return { success: true, user: demoUser };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('worawat_computer_user');
-    localStorage.removeItem('worawat_computer_token');
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, register, loginWithGoogle, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, loading, isAdmin: user?.role === 'admin', login, register, loginWithGoogle, logout }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, loading],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);

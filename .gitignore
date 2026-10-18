@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# Runtime JSON database (recreated from server/data/seed.js on first start)
+server/data/db.json
+server/data/db.json.tmp

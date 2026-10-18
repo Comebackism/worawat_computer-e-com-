@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Cpu, LayoutGrid, Monitor, HardDrive, 
-  Database, SquareTerminal, BatteryCharging, 
+import {
+  Cpu, LayoutGrid, Monitor, HardDrive,
+  Database, SquareTerminal, BatteryCharging,
   Box, Wind, Fan, Mouse, Keyboard, Headphones,
-  Gamepad, Code, CheckCircle2, ShoppingCart, Trash2
+  Gamepad, Code, CheckCircle2, ShoppingCart, Trash2, AlertCircle, RotateCcw
 } from 'lucide-react';
+import { api, withQuery } from '../lib/api';
 
 const CATEGORIES = [
   { id: 'cpu', icon: Cpu, nameKey: 'cat.cpu', apiCategory: 'CPU' },
@@ -39,23 +40,32 @@ export default function Builder() {
   const [products, setProducts] = useState([]);
   const [buildParts, setBuildParts] = useState({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Fetch products for the active category
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    fetch('http://localhost:4000/api/products')
-      .then(res => res.json())
-      .then(data => {
-        // Filter by the generic category our API uses
-        const filtered = data.filter(p => p.category === activeCategory.apiCategory);
-        setProducts(filtered);
+    setError('');
+
+    api(withQuery('/products', { category: activeCategory.apiCategory }))
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data) ? data : [];
+        setProducts(list);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
         setLoading(false);
       });
-  }, [activeCategory]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategory, reloadKey]);
 
   const handleSelectPart = (product) => {
     setBuildParts(prev => ({
@@ -75,11 +85,11 @@ export default function Builder() {
   const totalPrice = Object.values(buildParts).reduce((sum, item) => sum + (item?.price || 0), 0);
 
   const handleAddAllToCart = () => {
-    const parts = Object.values(buildParts);
+    const parts = Object.values(buildParts).filter((part) => Number(part?.stock ?? 1) > 0);
     if (parts.length === 0) return;
-    
+
     parts.forEach(part => {
-      addToCart(part);
+      addToCart(part, 1);
     });
     navigate('/cart');
   };
@@ -158,7 +168,6 @@ export default function Builder() {
 </aside>
 
 {/* Main Area: Product Selection */}
-        {/* Main Area: Product Selection */}
         <div className="flex-grow">
           
           {/* Current Selection Banner */}
@@ -197,6 +206,18 @@ export default function Builder() {
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
+          ) : error ? (
+            <div className="text-center py-16 bg-surface rounded-xl border border-rose-100">
+              <p className="text-rose-600 font-semibold mb-4 flex items-center justify-center gap-2">
+                <AlertCircle className="w-5 h-5" /> {t('common.loadError')}
+              </p>
+              <button
+                onClick={() => setReloadKey((k) => k + 1)}
+                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-primary text-white px-6 py-3 rounded-xl font-bold transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" /> {t('common.retry')}
+              </button>
+            </div>
           ) : products.length === 0 ? (
             <div className="text-center py-20 bg-surface rounded-xl border border-slate-100">
               <h3 className="text-xl font-bold text-slate-700 mb-2">{t('products.noFound')}</h3>
@@ -206,21 +227,27 @@ export default function Builder() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {products.map(product => {
                 const isSelected = buildParts[activeCategory.id]?.id === product.id;
-                
+                const outOfStock = Number(product.stock) <= 0;
+
                 return (
-                  <div key={product.id} className={`bg-white rounded-lg border transition-all flex flex-col ${isSelected ? 'border-primary ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                    
+                  <div key={product.id} className={`bg-white rounded-lg border transition-all flex flex-col ${isSelected ? 'border-primary ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'} ${outOfStock ? 'opacity-60' : ''}`}>
+
                     {/* Product Image */}
-                    <div className="p-4 flex justify-center items-center h-48 bg-white rounded-t-lg">
+                    <div className="p-4 flex justify-center items-center h-48 bg-white rounded-t-lg relative">
                       <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
+                      {outOfStock && (
+                        <span className="absolute top-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {t('product.outOfStock')}
+                        </span>
+                      )}
                     </div>
-                    
+
                     {/* Details */}
                     <div className="p-4 flex flex-col flex-grow border-t border-slate-100">
                       <h3 className="font-medium text-xs text-slate-800 mb-4 line-clamp-2 uppercase tracking-wide min-h-[2rem]">
                         {product.name}
                       </h3>
-                      
+
                       {/* Specs */}
                       <div className="space-y-1 mb-4 mt-auto">
                         {product.specs?.slice(0, 2).map((spec, idx) => (
@@ -230,16 +257,23 @@ export default function Builder() {
                           </div>
                         ))}
                       </div>
-                      
+
                       {/* Price & Add Button */}
                       <div className="mt-auto pt-3 flex items-center justify-between gap-2 border-t border-slate-50">
                         <span className="text-sm font-bold text-slate-800 truncate">
-                          ฿{product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ฿{Number(product.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        
-                        <button 
+
+                        <button
                           onClick={() => handleSelectPart(product)}
-                          className={`w-8 h-8 shrink-0 rounded flex items-center justify-center transition-colors focus:outline-none ${isSelected ? 'bg-primary text-white border-primary' : 'border border-red-500 text-red-500 hover:bg-red-50'}`}
+                          disabled={outOfStock}
+                          className={`w-8 h-8 shrink-0 rounded flex items-center justify-center transition-colors focus:outline-none ${
+                            outOfStock
+                              ? 'border border-slate-200 text-slate-400 cursor-not-allowed'
+                              : isSelected
+                                ? 'bg-primary text-white border-primary'
+                                : 'border border-red-500 text-red-500 hover:bg-red-50'
+                          }`}
                         >
                           {isSelected ? (
                             <CheckCircle2 className="w-5 h-5" />

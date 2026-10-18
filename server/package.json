@@ -1,15 +1,17 @@
 {
-  "name": "server",
+  "name": "e-comerworawat-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Mock REST API for the Worawat_computer storefront",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "reset-db": "node -e \"require('node:fs').rmSync('data/db.json',{force:true});console.log('data/db.json removed - it will be reseeded on next start')\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1"

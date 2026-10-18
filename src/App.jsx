@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Builder from './pages/Builder';
 import AdminDashboard from './pages/AdminDashboard';
+import NotFound from './pages/NotFound';
 import { ShoppingCart, Monitor, History, LogIn, User, LogOut, Globe, Menu, X, Hammer, Shield } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -17,7 +18,7 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext';
 function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount } = useCart();
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { lang, toggleLanguage, t } = useLanguage();
   
   const closeMenu = () => setIsMobileMenuOpen(false);
@@ -44,9 +45,11 @@ function Navbar() {
                 <Link to="/orders" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
                   <History className="w-4 h-4" /> {t('nav.orders')}
                 </Link>
-                <Link to="/admin" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
-                  <Shield className="w-4 h-4" /> {t('admin.title')}
-                </Link>
+                {isAdmin && (
+                  <Link to="/admin" className="text-slate-600 hover:text-primary transition-colors flex items-center gap-1 font-medium select-none focus:outline-none">
+                    <Shield className="w-4 h-4" /> {t('admin.title')}
+                  </Link>
+                )}
                 <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
                   <span className="text-sm font-bold text-slate-700 flex items-center gap-1 select-none"><User className="w-4 h-4 text-primary" /> {user.name}</span>
                   <button onClick={logout} className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 text-sm font-bold select-none focus:outline-none">
@@ -93,9 +96,11 @@ function Navbar() {
               <Link to="/orders" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
                 <History className="w-5 h-5" /> {t('nav.orders')}
               </Link>
-              <Link to="/admin" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
-                <Shield className="w-5 h-5" /> {t('admin.title')}
-              </Link>
+              {isAdmin && (
+                <Link to="/admin" onClick={closeMenu} className="text-slate-600 hover:text-primary transition-colors flex items-center gap-2 font-medium select-none focus:outline-none py-2 border-b border-slate-50">
+                  <Shield className="w-5 h-5" /> {t('admin.title')}
+                </Link>
+              )}
               <div className="flex flex-col gap-2 pt-2">
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2 select-none py-2"><User className="w-5 h-5 text-primary" /> {user.name}</span>
                 <button onClick={() => { logout(); closeMenu(); }} className="text-left text-slate-500 hover:text-red-500 transition-colors flex items-center gap-2 text-sm font-bold select-none focus:outline-none py-2">
@@ -114,19 +119,42 @@ function Navbar() {
   );
 }
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+function ProtectedRoute({ children, adminOnly = false }) {
+  const { user, isAdmin, loading } = useAuth();
   const location = useLocation();
+  const { t } = useLanguage();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center font-bold text-xl">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center font-bold text-xl text-slate-500">{t('common.loading')}</div>;
   }
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (adminOnly && !isAdmin) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-24 text-center">
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-4">{t('admin.title')}</h1>
+        <p className="text-slate-600 mb-8">{t('auth.adminOnly')}</p>
+        <Link to="/" className="inline-flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-colors">
+          {t('notFound.home')}
+        </Link>
+      </div>
+    );
+  }
+
   return children;
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+
+  return null;
 }
 
 function App() {
@@ -135,6 +163,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <div className="min-h-screen flex flex-col bg-background font-sans text-slate-800 select-none focus:outline-none print:bg-white print:min-h-0">
               <Navbar />
             <main className="flex-grow w-full">
@@ -156,14 +185,15 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                  <ProtectedRoute>
+                  <ProtectedRoute adminOnly>
                     <AdminDashboard />
                   </ProtectedRoute>
                 } />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <footer className="bg-white border-t border-slate-200 mt-12 py-8 text-center text-slate-500 print:hidden">
-              <p>&copy; 2026 Worawat_computer. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} Worawat_computer. All rights reserved.</p>
             </footer>
             </div>
           </Router>

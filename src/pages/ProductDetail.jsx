@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Star, Shield, Truck, ArrowLeft, Check, Plus, Minus } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import { ShoppingCart, Shield, Truck, ArrowLeft, Check, Plus, Minus } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { api } from '../lib/api';
 
 export default function ProductDetail() {
   const { t } = useLanguage();
@@ -12,23 +13,41 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`http://localhost:4000/api/products/${id}`)
-      .then(res => res.json())
-      .then(data => {
+    let cancelled = false;
+    setLoading(true);
+
+    api(`/products/${id}`)
+      .then((data) => {
+        if (cancelled) return;
         setProduct(data);
+        setQuantity(1);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
+      .catch(() => {
+        if (cancelled) return;
+        setProduct(null);
         setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) return <div className="max-w-7xl mx-auto px-6 py-20 text-center font-bold text-xl">{t('product.loading')}</div>;
-  if (!product) return <div className="max-w-7xl mx-auto px-6 py-20 text-center font-bold text-xl text-red-500">{t('product.notFound')}</div>;
+  if (!product) return (
+    <div className="max-w-7xl mx-auto px-6 py-20 text-center">
+      <p className="font-bold text-xl text-red-500 mb-6">{t('product.notFound')}</p>
+      <Link to="/products" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+        <ArrowLeft className="w-4 h-4" /> {t('product.back')}
+      </Link>
+    </div>
+  );
+
+  const inStock = product.stock > 0;
+  const atLimit = quantity >= product.stock;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
@@ -47,23 +66,36 @@ export default function ProductDetail() {
           <div className="mb-6">
             <span className="text-sm font-bold text-primary tracking-wider uppercase mb-2 block">{product.brand}</span>
             <h1 className="text-4xl font-extrabold text-slate-900 mb-4 leading-tight">{product.name}</h1>
-            <div className="price-lg text-4xl mb-6">฿{product.price.toLocaleString()}</div>
+            <div className="flex items-center gap-4 mb-6">
+              <span className="price-lg text-4xl">฿{product.price.toLocaleString()}</span>
+              <span
+                className={`text-sm font-bold px-3 py-1.5 rounded-full ${
+                  inStock ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                }`}
+              >
+                {inStock ? `${product.stock} ${t('product.stockCount')}` : t('product.outOfStock')}
+              </span>
+            </div>
             <p className="text-slate-600 leading-relaxed mb-8">{product.description}</p>
           </div>
 
           <div className="flex items-center gap-4 mb-6">
-            <span className="font-semibold text-slate-700">{t('product.quantity') || 'Quantity'}:</span>
+            <span className="font-semibold text-slate-700">{t('product.quantity')}:</span>
             <div className="flex items-center bg-slate-100 rounded-lg">
               <button 
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none"
+                disabled={quantity <= 1}
+                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none disabled:opacity-40 disabled:hover:text-slate-600"
+                aria-label={t('product.quantity')}
               >
                 <Minus className="w-5 h-5" />
               </button>
               <span className="w-12 text-center font-bold text-slate-800 select-none">{quantity}</span>
               <button 
                 onClick={() => setQuantity(quantity + 1)}
-                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none"
+                disabled={!inStock || atLimit}
+                className="p-2 text-slate-600 hover:text-primary transition-colors focus:outline-none disabled:opacity-40 disabled:hover:text-slate-600"
+                aria-label={t('product.quantity')}
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -77,8 +109,10 @@ export default function ProductDetail() {
                 setAdded(true);
                 setTimeout(() => setAdded(false), 3000);
               }}
-              disabled={added}
-              className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 select-none focus:outline-none ${added ? 'bg-green-500 text-white cursor-default' : 'bg-primary hover:bg-blue-700 text-white'}`}
+              disabled={added || !inStock}
+              className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 select-none focus:outline-none ${
+                !inStock ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : added ? 'bg-green-500 text-white cursor-default' : 'bg-primary hover:bg-blue-700 text-white'
+              }`}
             >
               {added ? <><Check className="w-6 h-6" /> {t('product.addedToCart')}</> : <><ShoppingCart className="w-6 h-6" /> {t('product.addToCart')}</>}
             </button>
@@ -130,11 +164,15 @@ export default function ProductDetail() {
               <tr className="hover:bg-slate-50/50">
                 <th className="py-4 px-8 w-1/3 font-semibold text-slate-600 bg-slate-50/30">{t('product.features')}</th>
                 <td className="py-4 px-8 tech-text text-slate-800">
-                  <ul className="list-disc list-inside space-y-1">
-                    {product.specs.map((spec, i) => (
-                      <li key={i}>{spec}</li>
-                    ))}
-                  </ul>
+                  {(product.specs || []).length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {(product.specs || []).map((spec, i) => (
+                        <li key={i}>{spec}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-slate-500">{t('product.noSpecs')}</span>
+                  )}
                 </td>
               </tr>
             </tbody>

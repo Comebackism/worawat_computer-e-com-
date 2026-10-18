@@ -33,24 +33,32 @@ export default function Register() {
     setError('');
 
     // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all required fields');
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword) {
+      setError(t('register.required'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.mismatch'));
       return;
     }
 
     setIsSubmitting(true);
 
-    const result = await register(formData);
-    
+    const payload = {
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      phone: formData.phone,
+      dob: formData.dob,
+      email: formData.email.trim(),
+      password: formData.password,
+    };
+    const result = await register(payload);
+
     if (result.success) {
       navigate('/', { replace: true });
     } else {
-      setError(result.error || 'Registration failed. Please try again.');
+      setError(result.error || t('register.failed'));
       setIsSubmitting(false);
     }
   };

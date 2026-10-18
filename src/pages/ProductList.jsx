@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { api } from '../lib/api';
+
+const PRICE_CEILING = 100000;
 
 export default function ProductList() {
   const { t } = useLanguage();
@@ -10,28 +13,46 @@ export default function ProductList() {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(categoryParam ? [categoryParam] : []);
-  const [maxPrice, setMaxPrice] = useState(100000);
+  const [maxPrice, setMaxPrice] = useState(PRICE_CEILING);
   const [sortBy, setSortBy] = useState('default');
 
-  const availableBrands = ['NVIDIA', 'AMD', 'Corsair', 'ASUS'];
-  const availableCategories = ['GPU', 'CPU', 'RAM', 'Motherboard', 'Storage', 'Cooling', 'Power Supply', 'Case', 'Monitor', 'Peripherals', 'Software'];
+  // Filters are built from the live catalogue so new admin products show up.
+  const availableBrands = useMemo(
+    () => [...new Set(products.map((p) => p.brand))].sort((a, b) => a.localeCompare(b)),
+    [products],
+  );
+  const availableCategories = useMemo(
+    () => [...new Set(products.map((p) => p.category))].sort((a, b) => a.localeCompare(b)),
+    [products],
+  );
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/products')
-      .then(res => res.json())
-      .then(data => {
-        setProducts(data);
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+
+    api('/products')
+      .then((data) => {
+        if (cancelled) return;
+        setProducts(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
         setLoading(false);
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   useEffect(() => {
     if (categoryParam) {
@@ -53,11 +74,11 @@ export default function ProductList() {
         ? prev.filter(c => c !== category) 
         : [...prev, category]
     );
-    // Remove category from URL if we deselect it
-    if (searchParams.has('category')) {
+    // Keep the URL in sync when the category that came from the URL is cleared.
+    if (category === categoryParam) {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('category');
-      setSearchParams(newParams);
+      setSearchParams(newParams, { replace: true });
     }
   };
 
@@ -65,12 +86,12 @@ export default function ProductList() {
     setSearchQuery('');
     setSelectedBrands([]);
     setSelectedCategories([]);
-    setMaxPrice(100000);
+    setMaxPrice(PRICE_CEILING);
     setSortBy('default');
     if (searchParams.has('category')) {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('category');
-      setSearchParams(newParams);
+      setSearchParams(newParams, { replace: true });
     }
   };
 
@@ -104,7 +125,7 @@ export default function ProductList() {
           </div>
           
           <div className="mb-6">
-            <h3 className="font-semibold mb-3 text-slate-700">{t('products.category') || 'Category'}</h3>
+            <h3 className="font-semibold mb-3 text-slate-700">{t('products.category')}</h3>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               {availableCategories.map(cat => (
                 <label key={cat} className="flex items-center gap-2 cursor-pointer">
@@ -142,7 +163,7 @@ export default function ProductList() {
             <input 
               type="range" 
               min="0"
-              max="100000"
+              max={PRICE_CEILING}
               step="1000"
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
@@ -150,7 +171,7 @@ export default function ProductList() {
             />
             <div className="flex justify-between text-xs text-slate-500 mt-2 select-none">
               <span>฿0</span>
-              <span>฿100,000</span>
+              <span>฿{PRICE_CEILING.toLocaleString()}</span>
             </div>
           </div>
 
@@ -167,6 +188,11 @@ export default function ProductList() {
       <div className="flex-grow">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{t('products.title')}</h1>
+          {!loading && !error && (
+            <p className="text-sm font-semibold text-slate-500 md:mx-auto">
+              {filteredProducts.length} {t('products.results')}
+            </p>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             {/* Search Input */}
             <div className="relative w-full sm:w-64">
@@ -208,9 +234,26 @@ export default function ProductList() {
               <div key={n} className="h-96 bg-slate-100 animate-pulse rounded-xl"></div>
             ))}
           </div>
+        ) : error ? (
+          <div className="text-center py-20 bg-surface rounded-xl border border-red-100">
+            <h3 className="text-xl font-bold text-slate-700 mb-2">{t('common.error')}</h3>
+            <p className="text-slate-500 mb-6">{error}</p>
+            <button
+              onClick={() => setReloadKey(k => k + 1)}
+              className="inline-flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" /> {t('common.retry')}
+            </button>
+          </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-20 bg-surface rounded-xl border border-slate-100">
             <h3 className="text-xl font-bold text-slate-700 mb-2">{t('products.noFound')}</h3>
+            <button
+              onClick={handleResetFilters}
+              className="mt-4 inline-flex items-center gap-2 text-primary font-bold hover:underline"
+            >
+              <RotateCcw className="w-4 h-4" /> {t('products.reset')}
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -220,14 +263,23 @@ export default function ProductList() {
                   <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 <div className="p-6 flex flex-col flex-grow border-t border-slate-50">
-                  <h3 className="font-bold text-lg mb-2 text-slate-800 leading-tight">{product.name}</h3>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="font-bold text-lg text-slate-800 leading-tight">{product.name}</h3>
+                  </div>
                   <div className="flex flex-wrap gap-1.5 mb-4">
-                    {product.specs.slice(0, 2).map((spec, idx) => (
+                    {(product.specs || []).slice(0, 2).map((spec, idx) => (
                       <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border border-blue-100">{spec}</span>
                     ))}
                   </div>
                   <div className="mt-auto flex items-center justify-between">
                     <span className="price-lg">฿{product.price.toLocaleString()}</span>
+                    <span
+                      className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        product.stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                      }`}
+                    >
+                      {product.stock > 0 ? t('product.inStock') : t('product.outOfStock')}
+                    </span>
                   </div>
                 </div>
               </Link>

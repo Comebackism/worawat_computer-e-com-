@@ -2,14 +2,20 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Lock, Mail, ArrowRight, Monitor } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Monitor, Info, Shield } from 'lucide-react';
+
+const DEMO_ACCOUNTS = [
+  { label: 'Admin', email: 'admin@worawat.com', password: 'admin1234', admin: true },
+  { label: 'Customer', email: 'john.doe@example.com', password: 'demo1234', admin: false },
+];
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { login, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -18,30 +24,41 @@ export default function Login() {
   // Redirect to the page they were trying to visit, or home
   const from = location.state?.from?.pathname || '/';
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-
+  const submit = async (nextEmail, nextPassword) => {
     setIsSubmitting(true);
     setError('');
 
-    const result = await login(email, password);
-    
+    const result = await login(nextEmail, nextPassword);
+
     if (result.success) {
       navigate(from, { replace: true });
     } else {
-      setError('Invalid email or password. Please try again.');
+      setError(result.error || t('login.invalid'));
       setIsSubmitting(false);
     }
   };
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (!email.trim() || !password) {
+      setError(t('login.required'));
+      return;
+    }
+    submit(email.trim(), password);
+  };
+
+  const signInAsDemo = (account) => {
+    setEmail(account.email);
+    setPassword(account.password);
+    submit(account.email, account.password);
+  };
+
+  const inputClass = 'w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors';
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-6">
       <div className="max-w-md w-full bg-surface rounded-2xl shadow-ambient border border-slate-100 p-8 select-none">
-        
+
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-2xl tracking-tight mb-6 focus:outline-none">
             <Monitor className="w-8 h-8" />
@@ -62,35 +79,49 @@ export default function Login() {
             <label className="block text-sm font-semibold text-slate-700 mb-2">{t('login.email')}</label>
             <div className="relative">
               <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors"
+                className={inputClass}
                 placeholder="you@example.com"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="block text-sm font-semibold text-slate-700">{t('login.password')}</label>
-              <a href="#" className="text-sm font-semibold text-primary hover:underline focus:outline-none">{t('login.forgot')}</a>
-            </div>
-            <div className="relative">
-              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors"
-                placeholder="••••••••"
+                autoComplete="email"
               />
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <div>
+            <div className="flex justify-between mb-2">
+              <label className="block text-sm font-semibold text-slate-700">{t('login.password')}</label>
+              <button
+                type="button"
+                onClick={() => setShowForgot((v) => !v)}
+                className="text-sm font-semibold text-primary hover:underline focus:outline-none"
+              >
+                {t('login.forgot')}
+              </button>
+            </div>
+            <div className="relative">
+              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
+            {showForgot && (
+              <p className="mt-3 flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg p-3">
+                <Info className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
+                {t('login.forgotHint')}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
             disabled={isSubmitting}
             className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:outline-none ${isSubmitting ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-primary hover:bg-blue-700 text-white'}`}
           >
@@ -98,13 +129,33 @@ export default function Login() {
           </button>
         </form>
 
+        {/* Demo accounts, so the app can be explored without signing up first */}
+        <div className="mt-8 rounded-xl border border-slate-100 bg-slate-50 p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">{t('login.demoAccounts')}</p>
+          <p className="text-xs text-slate-500 mb-3">{t('login.demoHint')}</p>
+          <div className="flex flex-wrap gap-2">
+            {DEMO_ACCOUNTS.map((account) => (
+              <button
+                key={account.email}
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => signInAsDemo(account)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold bg-white hover:bg-primary hover:text-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
+              >
+                {account.admin ? <Shield className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                {account.email}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="my-6 flex items-center gap-4">
           <div className="h-px bg-slate-200 flex-grow"></div>
           <span className="text-slate-400 text-sm font-semibold select-none">OR</span>
           <div className="h-px bg-slate-200 flex-grow"></div>
         </div>
 
-        <button 
+        <button
           onClick={() => {
             loginWithGoogle();
             navigate(from, { replace: true });
@@ -119,7 +170,7 @@ export default function Login() {
           </svg>
           {t('login.google')}
         </button>
-        
+
         <div className="mt-8 text-center">
           <p className="text-slate-500 text-sm font-medium">
             {t('login.noAccount')} <Link to="/register" className="text-primary font-bold hover:underline focus:outline-none select-none">{t('login.signup')}</Link>

@@ -7,10 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "reset-db": "npm --prefix server run reset-db",
+    "start": "npm run build && npm run server"
   },
   "dependencies": {
     "lucide-react": "^1.23.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",

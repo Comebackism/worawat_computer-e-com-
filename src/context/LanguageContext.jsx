@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const LanguageContext = createContext();
 
@@ -33,6 +33,15 @@ const translations = {
     'products.sortDefault': 'Default',
     'products.sortLowHigh': 'Price: Low to High',
     'products.sortHighLow': 'Price: High to Low',
+    'products.category': 'Category',
+    'products.results': 'products found',
+    'products.empty': 'No products to show yet.',
+    'common.loading': 'Loading...',
+    'common.error': 'Something went wrong',
+    'common.loadError': 'Could not load data from the server.',
+    'common.retry': 'Try again',
+    'common.save': 'Save',
+    'common.cancel': 'Cancel',
     
     'orders.title': 'Order History',
     'orders.id': 'Order ID',
@@ -56,6 +65,42 @@ const translations = {
     'invoice.customerAddressLabel': 'Customer Address Details',
     'invoice.cityPostal': 'City, Postal Code',
     'invoice.thankYou': 'Thank you for your business!',
+    'invoice.paymentMethod': 'Payment Method',
+    'invoice.credit': 'Credit Card (paid)',
+    'invoice.qr': 'QR PromptPay (paid)',
+    'invoice.address': 'Address',
+    'invoice.contact': 'Contact',
+
+    'orders.empty': 'No orders yet',
+    'orders.emptyHint': 'Once you complete a checkout, your order and invoice will show up here.',
+    'orders.showingFor': 'Showing orders for',
+    'orders.placed': 'Your order was placed successfully. Thank you!',
+    'orders.payment': 'Payment',
+    'orders.paid': 'Paid',
+    'orders.unpaid': 'Unpaid',
+    'orders.dismiss': 'Dismiss',
+
+    'product.inStock': 'In stock',
+    'product.outOfStock': 'Out of stock',
+    'product.stockCount': 'in stock',
+    'product.noSpecs': 'No specifications listed for this product.',
+
+    'admin.lowStock': 'Low stock items',
+    'admin.noData': 'Nothing to show yet',
+    'admin.specs': 'Specs (comma separated)',
+    'admin.memory': 'Memory / Capacity',
+    'admin.filterStatus': 'Filter by status',
+    'admin.allStatuses': 'All statuses',
+
+    'login.demoAccounts': 'Demo accounts',
+    'login.demoHint': 'Use the admin account to open the dashboard, or a customer account to see existing orders.',
+    'login.forgotHint': 'Password reset is not wired up in this demo. Sign in with a demo account or create a new one.',
+
+    'auth.adminOnly': 'This area is restricted to administrators.',
+
+    'notFound.title': 'Page not found',
+    'notFound.hint': 'The page you are looking for does not exist or has moved.',
+    'notFound.home': 'Back to home',
 
     'status.pending': 'Pending',
     'status.processing': 'Processing',
@@ -98,6 +143,18 @@ const translations = {
     'admin.guest': 'Guest',
     'admin.viewAll': 'View All',
     'admin.cancelOrder': 'Cancel Order',
+    'admin.brand': 'Brand',
+    'admin.description': 'Description',
+    'admin.confirmDeleteProduct': 'Delete this product?',
+    'admin.confirmDeleteCustomer': 'Delete this customer?',
+    'admin.confirmCancelOrder': 'Cancel this order and return the items to stock?',
+    'admin.saveError': 'Could not save your changes.',
+    'admin.lowStockHint': 'items at or below 5 units',
+    'admin.outOfStock': 'Out of stock',
+    'admin.unitsInStock': 'in stock',
+    'admin.noProducts': 'No products yet',
+    'admin.noOrders': 'No orders yet',
+    'admin.noCustomers': 'No customers yet',
 
     'product.loading': 'Loading product...',
     'product.notFound': 'Product not found',
@@ -147,6 +204,23 @@ const translations = {
     'checkout.confirmPayment': 'Confirm Payment',
     'checkout.terms': 'By confirming, you agree to our Terms of Service and Privacy Policy.',
 
+    'checkout.qrScanTitle': 'Scan to pay with any Thai banking app',
+    'checkout.qrScanHint': 'Open your bank app, tap "Scan QR", then point the camera at the code.',
+    'checkout.payTo': 'PromptPay account',
+    'checkout.amount': 'Amount',
+    'checkout.reference': 'Reference',
+    'checkout.copy': 'Copy',
+    'checkout.copied': 'Copied',
+    'checkout.downloadQr': 'Save QR image',
+    'checkout.refreshQr': 'New QR code',
+    'checkout.qrExpiresIn': 'QR code expires in',
+    'checkout.qrExpired': 'This QR code has expired.',
+    'checkout.qrValid15': 'The code stays valid for 15 minutes and can only be used once.',
+    'checkout.confirmPaid': 'I have paid — confirm order',
+    'checkout.fillingRequired': 'Please fill in your shipping details before paying.',
+    'checkout.serverError': 'Could not place the order. Please try again.',
+    'checkout.bankName': 'Bank',
+
     'nav.builder': 'Custom PC',
     'builder.title': 'Custom PC Builder',
     'builder.preview': 'Preview',
@@ -185,6 +259,9 @@ const translations = {
     'login.google': 'Login with Google',
     'login.noAccount': 'Don\'t have an account?',
     'login.signup': 'Sign up',
+    'login.required': 'Please enter your email and password.',
+    'login.invalid': 'Invalid email or password. Please try again.',
+    'login.demoFill': 'Fill in',
     
     'register.title': 'Register',
     'register.firstName': 'First Name',
@@ -198,6 +275,9 @@ const translations = {
     'register.submitting': 'Processing...',
     'register.hasAccount': 'Already have an account?',
     'register.signin': 'Sign In',
+    'register.required': 'Please fill in all required fields.',
+    'register.mismatch': 'Passwords do not match.',
+    'register.failed': 'Registration failed. Please try again.',
   },
   th: {
     'nav.products': 'สินค้าทั้งหมด',
@@ -228,6 +308,15 @@ const translations = {
     'products.sortDefault': 'ค่าเริ่มต้น',
     'products.sortLowHigh': 'ราคา: ต่ำไปสูง',
     'products.sortHighLow': 'ราคา: สูงไปต่ำ',
+    'products.category': 'หมวดหมู่',
+    'products.results': 'รายการที่พบ',
+    'products.empty': 'ยังไม่มีสินค้าให้แสดง',
+    'common.loading': 'กำลังโหลด...',
+    'common.error': 'เกิดข้อผิดพลาดบางอย่าง',
+    'common.loadError': 'ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์ได้',
+    'common.retry': 'ลองอีกครั้ง',
+    'common.save': 'บันทึก',
+    'common.cancel': 'ยกเลิก',
     
     'orders.title': 'ประวัติคำสั่งซื้อ',
     'orders.id': 'รหัสคำสั่งซื้อ',
@@ -251,6 +340,42 @@ const translations = {
     'invoice.customerAddressLabel': 'รายละเอียดที่อยู่ลูกค้า',
     'invoice.cityPostal': 'เมือง/จังหวัด, รหัสไปรษณีย์',
     'invoice.thankYou': 'ขอบคุณที่ไว้วางใจและใช้บริการของเรา!',
+    'invoice.paymentMethod': 'วิธีการชำระเงิน',
+    'invoice.credit': 'บัตรเครดิต (ชำระแล้ว)',
+    'invoice.qr': 'คิวอาร์พร้อมเพย์ (ชำระแล้ว)',
+    'invoice.address': 'ที่อยู่',
+    'invoice.contact': 'ติดต่อ',
+
+    'orders.empty': 'ยังไม่มีคำสั่งซื้อ',
+    'orders.emptyHint': 'เมื่อคุณสั่งซื้อสำเร็จ คำสั่งซื้อและใบเสร็จจะแสดงที่นี่',
+    'orders.showingFor': 'แสดงคำสั่งซื้อของ',
+    'orders.placed': 'สั่งซื้อสำเร็จแล้ว ขอบคุณที่ใช้บริการ!',
+    'orders.payment': 'การชำระเงิน',
+    'orders.paid': 'ชำระแล้ว',
+    'orders.unpaid': 'ยังไม่ชำระ',
+    'orders.dismiss': 'ปิด',
+
+    'product.inStock': 'มีสินค้า',
+    'product.outOfStock': 'สินค้าหมด',
+    'product.stockCount': 'ชิ้นในสต็อก',
+    'product.noSpecs': 'สินค้านี้ยังไม่มีข้อมูลจำเพาะ',
+
+    'admin.lowStock': 'สินค้าใกล้หมด',
+    'admin.noData': 'ยังไม่มีข้อมูล',
+    'admin.specs': 'สเปค (คั่นด้วยเครื่องหมายจุลภาค)',
+    'admin.memory': 'หน่วยความจำ / ความจุ',
+    'admin.filterStatus': 'กรองตามสถานะ',
+    'admin.allStatuses': 'ทุกสถานะ',
+
+    'login.demoAccounts': 'บัญชีทดลองใช้งาน',
+    'login.demoHint': 'ใช้อีเมลผู้ดูแลระบบเพื่อเข้าหน้าจัดการหลังบ้าน หรือบัญชีลูกค้าเพื่อดูคำสั่งซื้อตัวอย่าง',
+    'login.forgotHint': 'ระบบรีเซ็ตรหัสผ่านยังไม่เปิดใช้งานในเดโมนี้ กรุณาใช้บัญชีทดลองหรือสมัครสมาชิกใหม่',
+
+    'auth.adminOnly': 'ส่วนนี้สำหรับผู้ดูแลระบบเท่านั้น',
+
+    'notFound.title': 'ไม่พบหน้าที่ต้องการ',
+    'notFound.hint': 'หน้าที่คุณกำลังมองหาไม่มีอยู่ หรือถูกย้ายไปแล้ว',
+    'notFound.home': 'กลับหน้าแรก',
 
     'status.pending': 'รอดำเนินการ',
     'status.processing': 'กำลังดำเนินการ',
@@ -293,6 +418,18 @@ const translations = {
     'admin.guest': 'ลูกค้าทั่วไป',
     'admin.viewAll': 'ดูทั้งหมด',
     'admin.cancelOrder': 'ยกเลิกคำสั่งซื้อ',
+    'admin.brand': 'แบรนด์',
+    'admin.description': 'รายละเอียด',
+    'admin.confirmDeleteProduct': 'ต้องการลบสินค้านี้ใช่หรือไม่?',
+    'admin.confirmDeleteCustomer': 'ต้องการลบลูกค้ารายนี้ใช่หรือไม่?',
+    'admin.confirmCancelOrder': 'ต้องการยกเลิกคำสั่งซื้อนี้และคืนสินค้าเข้าสต็อกใช่หรือไม่?',
+    'admin.saveError': 'ไม่สามารถบันทึกข้อมูลได้',
+    'admin.lowStockHint': 'รายการที่มีสต็อกไม่เกิน 5 ชิ้น',
+    'admin.outOfStock': 'สินค้าหมด',
+    'admin.unitsInStock': 'ชิ้นในสต็อก',
+    'admin.noProducts': 'ยังไม่มีสินค้า',
+    'admin.noOrders': 'ยังไม่มีคำสั่งซื้อ',
+    'admin.noCustomers': 'ยังไม่มีข้อมูลลูกค้า',
 
     'product.loading': 'กำลังโหลดข้อมูลสินค้า...',
     'product.notFound': 'ไม่พบสินค้า',
@@ -342,6 +479,23 @@ const translations = {
     'checkout.confirmPayment': 'ยืนยันการชำระเงิน',
     'checkout.terms': 'การยืนยันคำสั่งซื้อถือว่ายอมรับข้อกำหนดการให้บริการและนโยบายความเป็นส่วนตัวของเรา',
 
+    'checkout.qrScanTitle': 'สแกนจ่ายด้วยแอปธนาคารใดก็ได้',
+    'checkout.qrScanHint': 'เปิดแอปธนาคาร เลือก "สแกนคิวอาร์" แล้วเล็งกล้องไปที่โค้ด',
+    'checkout.payTo': 'บัญชีพร้อมเพย์',
+    'checkout.amount': 'ยอดชำระ',
+    'checkout.reference': 'เลขที่อ้างอิง',
+    'checkout.copy': 'คัดลอก',
+    'checkout.copied': 'คัดลอกแล้ว',
+    'checkout.downloadQr': 'บันทึกรูปคิวอาร์',
+    'checkout.refreshQr': 'สร้างคิวอาร์ใหม่',
+    'checkout.qrExpiresIn': 'คิวอาร์หมดอายุใน',
+    'checkout.qrExpired': 'คิวอาร์นี้หมดอายุแล้ว',
+    'checkout.qrValid15': 'โค้ดมีอายุ 15 นาที และใช้ได้เพียงครั้งเดียว',
+    'checkout.confirmPaid': 'ชำระเงินแล้ว — ยืนยันคำสั่งซื้อ',
+    'checkout.fillingRequired': 'กรุณากรอกข้อมูลจัดส่งให้ครบก่อนชำระเงิน',
+    'checkout.serverError': 'ไม่สามารถสร้างคำสั่งซื้อได้ กรุณาลองใหม่อีกครั้ง',
+    'checkout.bankName': 'ธนาคาร',
+
     'nav.builder': 'จัดสเปคคอม',
     'builder.title': 'จัดสเปคคอมพิวเตอร์',
     'builder.preview': 'ดูตัวอย่าง',
@@ -380,6 +534,9 @@ const translations = {
     'login.google': 'เข้าสู่ระบบด้วย Google',
     'login.noAccount': 'ยังไม่มีบัญชีผู้ใช้?',
     'login.signup': 'สมัครสมาชิก',
+    'login.required': 'กรุณากรอกอีเมลและรหัสผ่าน',
+    'login.invalid': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
+    'login.demoFill': 'กรอกให้',
     
     'register.title': 'ลงทะเบียน',
     'register.firstName': 'ชื่อ',
@@ -393,22 +550,34 @@ const translations = {
     'register.submitting': 'กำลังดำเนินการ...',
     'register.hasAccount': 'มีบัญชีผู้ใช้แล้ว?',
     'register.signin': 'เข้าสู่ระบบ',
+    'register.required': 'กรุณากรอกข้อมูลในช่องที่จำเป็นให้ครบ',
+    'register.mismatch': 'รหัสผ่านทั้งสองช่องไม่ตรงกัน',
+    'register.failed': 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
   }
 };
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('th');
+  const [lang, setLang] = useState(() => {
+    const stored = localStorage.getItem('worawat_computer_lang');
+    return stored === 'en' || stored === 'th' ? stored : 'th';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('worawat_computer_lang', lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const toggleLanguage = () => {
     setLang(prev => prev === 'en' ? 'th' : 'en');
   };
 
-  const t = (key) => {
-    return translations[lang][key] || key;
+  const t = (key, fallback) => {
+    const table = translations[lang] || translations.en;
+    return table[key] ?? translations.en[key] ?? fallback ?? key;
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, toggleLanguage, t }}>
+    <LanguageContext.Provider value={{ lang, setLang, toggleLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
