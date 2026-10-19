@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Cpu, Monitor, Zap, ArrowRight, Star, ShoppingCart, Check, RotateCcw, ShieldCheck, MessagesSquare, Truck, Wrench } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Cpu, ArrowRight, Star, ShoppingCart, Check, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../lib/api';
 import GpuAnatomy from '../components/GpuAnatomy';
 
 const BANNERS = ['/images/banner1.png', '/images/banner2.png', '/images/banner3.png'];
+const CAMPAIGN = [
+  { titleKey: 'home.campaign.1Title', bodyKey: 'home.campaign.1Body' },
+  { titleKey: 'home.campaign.2Title', bodyKey: 'home.campaign.2Body' },
+  { titleKey: 'home.campaign.3Title', bodyKey: 'home.campaign.3Body' },
+];
 const SLIDE_DURATION = 5000;
+const CATEGORIES = [
+  { id: 'GPU', image: '/images/gpu.png', nameKey: 'cat.graphicsCards' },
+  { id: 'CPU', image: '/images/cpu.png', nameKey: 'cat.processors' },
+  { id: 'RAM', image: '/images/ram.png', nameKey: 'cat.memory' },
+  { id: 'Motherboard', image: '/images/motherboard.png', nameKey: 'cat.motherboards' },
+];
 
 export default function Home() {
   const { t } = useLanguage();
@@ -59,14 +70,6 @@ export default function Home() {
 
   const goToSlide = (index) => setCurrentSlide(((index % BANNERS.length) + BANNERS.length) % BANNERS.length);
 
-  // Four promises, one key message each — rendered as the hero feature cards
-  const heroFeatures = [
-    { Icon: ShieldCheck, titleKey: 'home.hero.f1Title', bodyKey: 'home.hero.f1Body' },
-    { Icon: MessagesSquare, titleKey: 'home.hero.f2Title', bodyKey: 'home.hero.f2Body' },
-    { Icon: Truck, titleKey: 'home.hero.f3Title', bodyKey: 'home.hero.f3Body' },
-    { Icon: Wrench, titleKey: 'home.hero.f4Title', bodyKey: 'home.hero.f4Body' },
-  ];
-
   const handleQuickAdd = (event, product) => {
     event.preventDefault();
     event.stopPropagation();
@@ -77,9 +80,9 @@ export default function Home() {
 
   return (
     <div className="w-full bg-slate-50 min-h-screen">
-      {/* Hero Carousel */}
+      {/* Campaign: square artwork stays uncropped beside its offer */}
       <section
-        className="relative w-full h-[200px] sm:h-[280px] md:h-[400px] lg:h-[450px] overflow-hidden bg-slate-900 group"
+        className="bg-midnight text-white"
         aria-roledescription="carousel"
         aria-label={t('home.bannerAlt')}
         onMouseEnter={() => setCarouselPaused(true)}
@@ -87,57 +90,78 @@ export default function Home() {
         onFocus={() => setCarouselPaused(true)}
         onBlur={() => setCarouselPaused(false)}
       >
-        {BANNERS.map((banner, index) => (
-          <div
-            key={banner}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-            aria-hidden={index !== currentSlide}
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 sm:px-6 md:gap-12 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:py-12">
+          <Link
+            to="/products"
+            className="group relative block aspect-square w-full overflow-hidden rounded-3xl bg-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-midnight"
+            aria-label={t(CAMPAIGN[currentSlide].titleKey)}
           >
-            <img
-              src={banner}
-              alt={`${t('home.bannerAlt')} ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading={index === 0 ? 'eager' : 'lazy'}
-            />
+            {BANNERS.map((banner, index) => (
+              <img
+                key={banner}
+                src={banner}
+                alt=""
+                aria-hidden={index !== currentSlide}
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            ))}
+          </Link>
+
+          <div className="max-w-xl">
+            <h2 className="font-display text-3xl font-semibold leading-[1.4] sm:text-4xl">
+              {t(CAMPAIGN[currentSlide].titleKey)}
+            </h2>
+            <p className="mt-5 text-base leading-[1.75] text-white/65 sm:text-lg">
+              {t(CAMPAIGN[currentSlide].bodyKey)}
+            </p>
+            <div className="mt-8">
+              <Link
+                to="/products"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+              >
+                {t('home.campaign.cta')}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-10 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => goToSlide(currentSlide - 1)}
+                aria-label={t('home.prevSlide')}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex flex-1 gap-2">
+                {BANNERS.map((banner, index) => (
+                  <button
+                    key={banner}
+                    type="button"
+                    onClick={() => goToSlide(index)}
+                    aria-label={`${t('home.goToSlide')} ${index + 1}`}
+                    aria-current={index === currentSlide}
+                    className={`h-1 flex-1 rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-midnight ${index === currentSlide ? 'bg-white' : 'bg-white/20 hover:bg-white/40'}`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => goToSlide(currentSlide + 1)}
+                aria-label={t('home.nextSlide')}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/20 text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        ))}
-
-        {/* Navigation Arrows */}
-        <button
-          type="button"
-          onClick={() => goToSlide(currentSlide - 1)}
-          aria-label={t('home.prevSlide')}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        >
-          <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
-        </button>
-        <button
-          type="button"
-          onClick={() => goToSlide(currentSlide + 1)}
-          aria-label={t('home.nextSlide')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-        >
-          <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
-        </button>
-
-        {/* Dots */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {BANNERS.map((banner, index) => (
-            <button
-              key={banner}
-              type="button"
-              onClick={() => goToSlide(index)}
-              aria-label={`${t('home.goToSlide')} ${index + 1}`}
-              aria-current={index === currentSlide}
-              className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${index === currentSlide ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`}
-            />
-          ))}
         </div>
       </section>
 
       {/* Hero: the flagship card gets a quiet stage — one hue, no decoration */}
-      <section className="bg-gradient-to-b from-slate-900 to-midnight text-white">
-        <div className="mx-auto max-w-7xl px-6 pt-16 pb-14 lg:pt-24 lg:pb-20">
+      <section className="border-t border-white/[0.06] bg-gradient-to-b from-slate-900 to-midnight text-white">
+        <div className="mx-auto max-w-7xl px-6 pt-14 pb-12 lg:pt-20 lg:pb-16">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
             <div>
               <h1 className="font-display text-4xl font-semibold leading-[1.4] text-white sm:text-5xl lg:text-[3.2rem]">
@@ -162,14 +186,6 @@ export default function Home() {
                   {t('home.hero.ctaSecondary')}
                 </Link>
               </div>
-              <ul className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/60">
-                {['home.hero.trust1', 'home.hero.trust2', 'home.hero.trust3'].map((key) => (
-                  <li key={key} className="flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5 shrink-0 text-white/45" />
-                    {t(key)}
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* The photo stays the only loud thing; its studio backdrop is tinted into the ground */}
@@ -197,24 +213,8 @@ export default function Home() {
             </figure>
           </div>
 
-          {/* Four promises, set as text rows rather than cards */}
-          <dl className="mt-16 grid gap-x-12 border-t border-white/10 lg:mt-20 lg:grid-cols-2">
-            {heroFeatures.map(({ Icon, titleKey, bodyKey }) => (
-              <div
-                key={titleKey}
-                className="flex flex-col gap-1 border-b border-white/5 py-6 sm:flex-row sm:items-baseline sm:gap-4"
-              >
-                <dt className="flex shrink-0 items-center gap-2 font-medium text-white sm:w-44">
-                  <Icon className="w-4 h-4 shrink-0 text-white/45" />
-                  {t(titleKey)}
-                </dt>
-                <dd className="text-sm leading-[1.7] text-white/60">{t(bodyKey)}</dd>
-              </div>
-            ))}
-          </dl>
-
           {/* Proof stated once, quietly, with the repeat path into the catalogue */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/60">
+          <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/60 lg:mt-16">
             <span>
               {t('home.hero.statProducts')}{' '}
               <strong className="font-medium text-white/85">{productCount || 22}+</strong>
@@ -241,49 +241,69 @@ export default function Home() {
 
       <GpuAnatomy />
 
-      {/* Category Icons with Hover Effects */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-extrabold text-slate-800 relative inline-block">
+      {/* Shop by part: real product renders instead of icons */}
+      <section className="mx-auto max-w-7xl px-6 py-14 md:py-16">
+        <div className="flex items-end justify-between gap-6">
+          <h2 className="font-display text-2xl font-semibold text-slate-900 md:text-3xl">
             {t('home.browse')}
-            <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-blue-600 rounded-full"></span>
           </h2>
+          <Link
+            to="/products"
+            className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            {t('home.viewAll')}
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            { name: t('cat.graphicsCards'), id: 'GPU', icon: <Monitor className="w-10 h-10 mb-4 text-blue-600 group-hover:scale-110 group-hover:text-white transition-all duration-300" />, color: 'hover:bg-blue-600' },
-            { name: t('cat.processors'), id: 'CPU', icon: <Cpu className="w-10 h-10 mb-4 text-indigo-600 group-hover:scale-110 group-hover:text-white transition-all duration-300" />, color: 'hover:bg-indigo-600' },
-            { name: t('cat.memory'), id: 'RAM', icon: <Zap className="w-10 h-10 mb-4 text-purple-600 group-hover:scale-110 group-hover:text-white transition-all duration-300" />, color: 'hover:bg-purple-600' },
-            { name: t('cat.motherboards'), id: 'Motherboard', icon: <Cpu className="w-10 h-10 mb-4 text-rose-600 group-hover:scale-110 group-hover:text-white transition-all duration-300" />, color: 'hover:bg-rose-600' },
-          ].map((cat, i) => (
-            <Link to={`/products?category=${cat.id}`} key={i} className={`bg-white rounded-2xl p-8 flex flex-col items-center justify-center shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer border border-slate-100 select-none group hover:-translate-y-2 ${cat.color}`}>
-              {cat.icon}
-              <span className="font-bold text-slate-700 group-hover:text-white transition-colors duration-300">{cat.name}</span>
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+          {CATEGORIES.map((category) => (
+            <Link
+              key={category.id}
+              to={`/products?category=${category.id}`}
+              className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition-colors duration-300 hover:border-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              <div className="relative aspect-square overflow-hidden bg-slate-50">
+                <img
+                  src={category.image}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover mix-blend-multiply transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-4">
+                <span className="font-display text-base font-medium text-slate-900">
+                  {t(category.nameKey)}
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-primary" />
+              </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Recommended Products with Glassmorphism and Glow */}
-      <section className="max-w-7xl mx-auto px-6 py-16 mb-20">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-extrabold text-slate-800 relative inline-block">
+      {/* Recommended products */}
+      <section className="mx-auto max-w-7xl px-6 py-14 md:py-16">
+        <div className="flex items-end justify-between gap-6">
+          <h2 className="font-display text-2xl font-semibold text-slate-900 md:text-3xl">
             {t('home.recommended')}
-            <span className="absolute -bottom-2 left-0 w-1/2 h-1 bg-indigo-600 rounded-full"></span>
           </h2>
-          <Link to="/products" className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center gap-1 group transition-colors">
-            {t('home.viewAll')} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <Link
+            to="/products"
+            className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            {t('home.viewAll')}
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
         {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100 animate-pulse">
-                <div className="h-72 bg-slate-200" />
-                <div className="p-6 space-y-4">
-                  <div className="h-4 w-24 bg-slate-200 rounded" />
-                  <div className="h-6 w-3/4 bg-slate-200 rounded" />
-                  <div className="h-8 w-28 bg-slate-200 rounded" />
+              <div key={i} className="animate-pulse overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+                <div className="aspect-[4/3] bg-slate-200" />
+                <div className="space-y-4 p-5">
+                  <div className="h-4 w-24 rounded bg-slate-200" />
+                  <div className="h-6 w-3/4 rounded bg-slate-200" />
+                  <div className="h-8 w-28 rounded bg-slate-200" />
                 </div>
               </div>
             ))}
@@ -291,72 +311,73 @@ export default function Home() {
         )}
 
         {!loading && error && (
-          <div className="bg-white border border-rose-100 rounded-2xl p-12 text-center shadow-sm">
-            <p className="text-rose-600 font-semibold mb-4">{t('common.loadError')}</p>
-            <button onClick={() => setReloadKey((k) => k + 1)} className="inline-flex items-center gap-2 bg-slate-900 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold transition-colors">
+          <div className="mt-8 rounded-2xl border border-rose-100 bg-white p-12 text-center">
+            <p className="mb-4 font-semibold text-rose-600">{t('common.loadError')}</p>
+            <button onClick={() => setReloadKey((k) => k + 1)} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary/90">
               <RotateCcw className="w-4 h-4" /> {t('common.retry')}
             </button>
           </div>
         )}
 
         {!loading && !error && products.length === 0 && (
-          <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
-            <p className="text-slate-500 font-semibold">{t('products.empty')}</p>
+          <div className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-12 text-center">
+            <p className="font-medium text-slate-500">{t('products.empty')}</p>
           </div>
         )}
 
         {!loading && !error && products.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
             {products.map((product) => {
               const outOfStock = Number(product.stock) <= 0;
               const added = justAdded === product.id;
               return (
                 <Link to={`/product/${product.id}`} key={product.id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-slate-100 flex flex-col select-none focus:outline-none group relative">
-                  {/* Image Container */}
-                  <div className="h-72 overflow-hidden bg-slate-50 relative">
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" />
-
-                    {/* Badges */}
-                    <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-                      <div className="bg-white/95 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {product.brand}
-                      </div>
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition duration-300 hover:border-slate-300 hover:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover mix-blend-multiply transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                    />
+                    <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-2">
+                      <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-600 backdrop-blur">
+                        {product.brand}
+                      </span>
                       {outOfStock && (
-                        <div className="bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                        <span className="rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-medium text-white">
                           {t('product.outOfStock')}
-                        </div>
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-6 flex flex-col flex-grow relative bg-white">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">{product.category}</span>
-                    </div>
-                    <h3 className="font-extrabold text-xl mb-3 text-slate-800 line-clamp-2 group-hover:text-indigo-600 transition-colors">{product.name}</h3>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="line-clamp-2 font-display text-lg font-medium leading-[1.45] text-slate-900 transition-colors group-hover:text-primary">
+                      {product.name}
+                    </h3>
 
-                    <div className="mt-auto flex items-end justify-between pt-4 border-t border-slate-100">
+                    <div className="mt-auto flex items-end justify-between gap-3 pt-6">
                       <div>
-                        <p className="text-sm text-slate-500 font-medium mb-1">{t('home.price')}</p>
-                        <span className="text-2xl font-black text-slate-900">฿{Number(product.price).toLocaleString()}</span>
+                        <p className="text-xs text-slate-500">{t('home.price')}</p>
+                        <span className="font-display text-xl font-medium tabular-nums text-slate-900">
+                          ฿{Number(product.price).toLocaleString()}
+                        </span>
                       </div>
                       <button
                         type="button"
                         onClick={(e) => handleQuickAdd(e, product)}
                         disabled={outOfStock}
                         aria-label={t('product.addToCart')}
-                        className={`p-3 rounded-xl transition-colors duration-300 shadow-md group-hover:-translate-y-1 ${
+                        className={`grid h-10 w-10 place-items-center rounded-full transition-colors duration-200 ${
                           outOfStock
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            ? 'cursor-not-allowed bg-slate-100 text-slate-400'
                             : added
                               ? 'bg-emerald-600 text-white'
-                              : 'bg-slate-900 text-white hover:bg-indigo-600 group-hover:shadow-indigo-500/30'
+                              : 'bg-primary text-white hover:bg-primary/90'
                         }`}
                       >
-                        {added ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+                        {added ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
@@ -365,6 +386,37 @@ export default function Home() {
             })}
           </div>
         )}
+      </section>
+
+      {/* Closing argument: hand the build to a technician */}
+      <section className="bg-midnight text-white">
+        <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_auto]">
+            <div>
+              <h2 className="max-w-2xl font-display text-3xl font-semibold leading-[1.4] md:text-4xl">
+                {t('home.build.title')}
+              </h2>
+              <p className="mt-5 max-w-xl text-base leading-[1.75] text-white/65">
+                {t('home.build.body')}
+              </p>
+              <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/60">
+                {['home.hero.f1Title', 'home.hero.f2Title', 'home.hero.f3Title', 'home.hero.f4Title'].map((key) => (
+                  <li key={key} className="flex items-center gap-1.5">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-white/45" />
+                    {t(key)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Link
+              to="/builder"
+              className="inline-flex items-center justify-center gap-2 justify-self-start rounded-full bg-primary px-7 py-3 font-medium text-white transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight lg:justify-self-end"
+            >
+              {t('home.build.cta')}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );
