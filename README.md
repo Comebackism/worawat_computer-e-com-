@@ -75,6 +75,32 @@ OAuth client in Google Cloud Console. To use a different client, set both
 `VITE_GOOGLE_CLIENT_ID` (build time) and `GOOGLE_CLIENT_ID` (run time) as
 environment variables.
 
+That single service is the whole app: the storefront, the API and the data all
+live on the same origin.
+
+### Deploy the storefront to Vercel (optional)
+
+Vercel can serve the built SPA while Render keeps the API and the database. The
+browser then only ever talks to the Vercel origin, because `vercel.json` rewrites
+`/api/*` through to the Render service. That keeps the session cookie
+first-party (a cookie sent straight from `vercel.app` to `onrender.com` would be
+a third-party cookie and browsers would drop it) and keeps the API's
+same-origin rules intact.
+
+1. Import this repository into Vercel: framework preset **Vite**, output `dist`.
+   Leave `VITE_API_URL` unset there so the app keeps calling the relative
+   `/api` path that the rewrite handles.
+2. If your API is not `worawat-computer.onrender.com`, change the `/api/:path*`
+   destination in `vercel.json`.
+3. Add the Vercel origin to the API's `CORS_ORIGINS` (`render.yaml` already
+   lists `https://worawat-computer-e-com.vercel.app`; use your own domain if you
+   attach one).
+4. The catch-all rewrite sends every unknown path to `/index.html`, so deep links
+   such as `/products` load the app instead of Vercel's 404 page.
+
+Without those rewrites a Vercel deployment is frontend only: `/api/health`
+answers `404` and every page that reads data shows "The page could not be found".
+
 ### Demo accounts
 
 | Role | Email | Password |
@@ -125,6 +151,9 @@ Email + password sign-in keeps working if Google is unavailable.
   production.
 - **CORS**: same-origin by default. Add extra origins with `CORS_ORIGINS`
   (comma-separated); a wildcard is never used with credentials.
+- **CSRF**: writes are refused unless the `Origin` header matches the host the
+  request came in on (a proxy's `X-Forwarded-Host` counts, so the Vercel rewrite
+  works) or an allowlisted origin. An origin-less non-browser client still works.
 - Errors returned to clients are generic; details go to the server log only.
 
 ## PromptPay payments

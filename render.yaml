@@ -37,6 +37,11 @@ services:
       # Signs the session cookie. Render generates a strong value on first deploy.
       - key: AUTH_SECRET
         generateValue: true
+      # Extra origins allowed to call the API with credentials. The Vercel
+      # deployment of this repository proxies /api/* back here (see vercel.json),
+      # so its origin must be trusted too. Comma separated; never a wildcard.
+      - key: CORS_ORIGINS
+        value: https://worawat-computer-e-com.vercel.app
       # Admin credentials. Set ADMIN_PASSWORD in the dashboard so the account
       # never keeps a demo password; leaving it unset keeps the existing one.
       - key: ADMIN_EMAIL

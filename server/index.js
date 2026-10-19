@@ -109,6 +109,34 @@ app.use(
 
 app.use(express.json({ limit: '256kb' }));
 
+// Every host name this request could legitimately have been addressed to: our
+// own Host header, plus whatever a proxy in front of us recorded there. A
+// storefront hosted on another origin (Vercel) reaches the API through a
+// rewrite, so the browser's Origin is that storefront's host while Host is this
+// service's.
+//
+// Trusting X-Forwarded-Host here is safe for CSRF purposes: a browser cannot set
+// it on a cross-site request, and a forged one is useless without the victim's
+// cookie.
+function hostOf(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    return new URL(raw.includes('://') ? raw : `http://${raw}`).host;
+  } catch {
+    return '';
+  }
+}
+
+function requestHosts(req) {
+  const hosts = new Set();
+  for (const value of [req.headers.host, ...String(req.headers['x-forwarded-host'] || '').split(',')]) {
+    const host = hostOf(value);
+    if (host) hosts.add(host);
+  }
+  return hosts;
+}
+
 // Defense-in-depth CSRF guard for state-changing requests. Browsers send an
 // Origin header on cross-site writes; only same-origin (or allowlisted) writes
 // proceed. Non-browser clients without an Origin still work.
@@ -116,13 +144,9 @@ app.use((req, res, next) => {
   if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
   const origin = req.headers.origin;
   if (!origin) return next();
-  let sameOrigin = false;
-  try {
-    sameOrigin = new URL(origin).host === req.headers.host;
-  } catch {
-    sameOrigin = false;
-  }
-  if (sameOrigin || ALLOWED_ORIGINS.includes(origin)) return next();
+  const originHost = hostOf(origin);
+  if (originHost && requestHosts(req).has(originHost)) return next();
+  if (ALLOWED_ORIGINS.includes(origin)) return next();
   return res.status(403).json({ message: 'Cross-site request blocked' });
 });
 
