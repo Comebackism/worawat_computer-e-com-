@@ -8,11 +8,8 @@
   --color-background: #f7f9fb;
   --color-surface: #ffffff;
 
-  /* Midnight stage: hero backdrop and its stage lighting */
+  /* Midnight ground for the home hero (the product photo supplies the colour) */
   --color-midnight: #0a0e27;
-  --color-abyss: #0f0f23;
-  --color-neon: #7c3aed;
-  --color-tech: #22d3ee;
 
   --shadow-ambient: 0 4px 20px rgba(30, 41, 59, 0.06);
 
@@ -20,6 +17,21 @@
   --animate-fadeIn: fadeIn 1.5s ease-out;
   --animate-slideInUp: slideInUp 1s ease-out;
   --animate-shake: shake 0.4s ease-in-out;
+  /* The hero's single authored moment: the product settles into place */
+  --animate-settle: settle 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes settle {
+    0% {
+      opacity: 0;
+      transform: translateY(14px);
+      filter: blur(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
 
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -66,6 +78,12 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Browser surfaces carry the palette too, on light and dark pages alike */
+::selection {
+  background-color: var(--color-primary);
+  color: #ffffff;
 }
 
 /* Respect the OS motion preference: entrance animations render their final state */

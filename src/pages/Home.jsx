@@ -134,122 +134,105 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Hero: midnight stage with the flagship product spotlighted */}
-      <section className="relative overflow-hidden bg-midnight text-white">
-        {/* Stage lighting — static spots + a masked grid (no looping animation) */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-[0.07] [mask-image:radial-gradient(ellipse_at_50%_0%,black,transparent_72%)]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-          }}
-        />
-        <div aria-hidden="true" className="absolute -top-48 right-[-12%] h-[720px] w-[720px] rounded-full bg-neon/25 blur-[130px]" />
-        <div aria-hidden="true" className="absolute bottom-[-18%] left-[-12%] h-[560px] w-[560px] rounded-full bg-blue-600/25 blur-[120px]" />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-6 pt-14 pb-12 lg:pt-20 lg:pb-16">
-          <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-16">
-            <div className="animate-fadeIn">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-tech backdrop-blur md:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-tech" />
-                {t('home.hero.eyebrow')}
-              </span>
-              <h1 className="mt-6 bg-gradient-to-r from-blue-300 via-indigo-200 to-violet-300 bg-clip-text font-display text-4xl font-bold leading-[1.2] tracking-tight text-transparent sm:text-5xl lg:text-6xl">
+      {/* Hero: the flagship card gets a quiet stage — one hue, no decoration */}
+      <section className="bg-gradient-to-b from-slate-900 to-midnight text-white">
+        <div className="mx-auto max-w-7xl px-6 pt-16 pb-14 lg:pt-24 lg:pb-20">
+          <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <h1 className="font-display text-4xl font-semibold leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
                 {t('home.hero.title')}
               </h1>
-              <p className="mt-5 max-w-xl text-lg text-slate-300 md:text-xl">
+              <p className="mt-6 max-w-xl text-lg text-white/65">
                 {t('home.hero.subtitle')}
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4 animate-slideInUp">
-                <Link to="/products" className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-7 py-3.5 font-bold text-white shadow-[0_18px_45px_-18px_rgba(79,70,229,1)] transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">
+              <div className="mt-10 flex flex-wrap items-center gap-3">
+                <Link
+                  to="/products"
+                  className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+                >
                   {t('home.hero.cta')}
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
-                <Link to="/builder" className="group inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-7 py-3.5 font-bold text-white backdrop-blur transition-all duration-300 hover:border-white/40 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-midnight">
-                  <Cpu className="w-5 h-5 text-tech transition-transform group-hover:scale-110" />
+                <Link
+                  to="/builder"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:border-white/50 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+                >
+                  <Cpu className="w-4 h-4" />
                   {t('home.hero.ctaSecondary')}
                 </Link>
               </div>
-              <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <ul className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/55">
                 {['home.hero.trust1', 'home.hero.trust2', 'home.hero.trust3'].map((key) => (
-                  <li key={key} className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                    <Check className="w-4 h-4 shrink-0 text-tech" />
+                  <li key={key} className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 shrink-0 text-white/45" />
                     {t(key)}
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Showcase stage */}
-            <div className="relative mx-auto w-full max-w-md animate-slideInUp lg:max-w-none">
-              <div aria-hidden="true" className="absolute -inset-8 rounded-[3rem] bg-gradient-to-tr from-blue-600/25 via-neon/20 to-cyan-400/20 blur-3xl" />
-              <div aria-hidden="true" className="absolute inset-x-12 -bottom-1 h-12 rounded-[100%] bg-blue-500/30 blur-2xl" />
-              <div className="relative rounded-[2rem] border border-white/10 bg-gradient-to-b from-white/[0.12] to-white/[0.03] p-3 shadow-2xl shadow-blue-950/60 backdrop-blur-xl">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-white">
+            {/* The photo stays the only loud thing; its studio backdrop is tinted into the ground */}
+            <figure className="mx-auto w-full max-w-md lg:max-w-none">
+              <div className="animate-settle overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
+                <div className="relative aspect-[4/3] bg-white">
                   <img
                     src="/images/rtx4090.png"
-                    alt={t('home.hero.showcase')}
+                    alt={t('home.hero.showcaseAlt')}
                     className="absolute inset-0 h-full w-full object-cover object-[50%_60%]"
                   />
                   <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(37,99,235,0.35),transparent_65%)] mix-blend-multiply"
+                    className="absolute inset-0 bg-gradient-to-b from-slate-100 to-slate-300 mix-blend-multiply"
                   />
-                  <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-900/25 to-transparent" />
-                  <span className="absolute left-4 top-4 z-20 rounded-full bg-midnight/85 px-3 py-1 font-display text-xs font-semibold tracking-wide text-tech backdrop-blur">
-                    {t('home.hero.showcase')}
-                  </span>
                 </div>
               </div>
-              {/* Social proof, floating over the product */}
-              <div className="absolute -left-3 bottom-6 z-20 flex items-center gap-3 rounded-2xl border border-white/10 bg-abyss/90 px-4 py-3 shadow-xl shadow-blue-950/50 backdrop-blur sm:-left-4">
-                <Star className="w-5 h-5 shrink-0 fill-amber-400 text-amber-400" />
-                <div className="leading-tight">
-                  <p className="font-display text-sm font-bold text-white">{t('home.hero.rating')}</p>
-                  <p className="text-[11px] text-slate-400">{t('home.hero.reviews')}</p>
-                </div>
-              </div>
-            </div>
+              <figcaption className="mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-white/60">
+                <span className="font-display tracking-wide">{t('home.hero.showcase')}</span>
+                <span className="inline-flex items-center gap-1.5 text-white/55">
+                  <Star className="w-3.5 h-3.5 shrink-0 text-white/40" />
+                  {t('home.hero.rating')} · {t('home.hero.reviews')}
+                </span>
+              </figcaption>
+            </figure>
           </div>
 
-          {/* Feature cards — one key message per card */}
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:mt-16 lg:grid-cols-4">
+          {/* Four promises, set as text rows rather than cards */}
+          <dl className="mt-16 grid gap-x-12 border-t border-white/10 lg:mt-20 lg:grid-cols-2">
             {heroFeatures.map(({ Icon, titleKey, bodyKey }) => (
               <div
                 key={titleKey}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.07] sm:p-5"
+                className="flex flex-col gap-1 border-b border-white/5 py-5 sm:flex-row sm:items-baseline sm:gap-4"
               >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/25 to-neon/25 text-tech ring-1 ring-inset ring-white/10">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <p className="mt-3 font-display text-sm font-semibold text-white sm:text-base">{t(titleKey)}</p>
-                <p className="mt-1 hidden text-sm text-slate-400 sm:block">{t(bodyKey)}</p>
+                <dt className="flex shrink-0 items-center gap-2 font-semibold text-white sm:w-44">
+                  <Icon className="w-4 h-4 shrink-0 text-white/45" />
+                  {t(titleKey)}
+                </dt>
+                <dd className="text-sm leading-relaxed text-white/55">{t(bodyKey)}</dd>
               </div>
             ))}
-          </div>
+          </dl>
 
-          {/* Numbers + repeated CTA */}
-          <div className="mt-4 flex flex-col gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
-            <dl className="flex flex-wrap items-center gap-x-10 gap-y-4">
-              {[
-                { value: `${productCount || 22}+`, key: 'home.hero.statProducts' },
-                { value: '15+', key: 'home.hero.statBrands' },
-                { value: t('home.hero.statWarrantyValue'), key: 'home.hero.statWarranty' },
-              ].map((stat) => (
-                <div key={stat.key}>
-                  <dt className="font-display text-2xl font-bold text-white">{stat.value}</dt>
-                  <dd className="text-xs text-slate-400 md:text-sm">{t(stat.key)}</dd>
-                </div>
-              ))}
-            </dl>
+          {/* Proof stated once, quietly, with the repeat path into the catalogue */}
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/55">
+            <span>
+              {t('home.hero.statProducts')}{' '}
+              <strong className="font-semibold text-white/80">{productCount || 22}+</strong>
+            </span>
+            <span aria-hidden="true" className="hidden h-3 w-px bg-white/15 sm:block" />
+            <span>
+              {t('home.hero.statBrands')} <strong className="font-semibold text-white/80">15+</strong>
+            </span>
+            <span aria-hidden="true" className="hidden h-3 w-px bg-white/15 sm:block" />
+            <span>
+              {t('home.hero.statWarranty')}{' '}
+              <strong className="font-semibold text-white/80">{t('home.hero.statWarrantyValue')}</strong>
+            </span>
             <Link
               to="/products"
-              className="inline-flex items-center gap-1 font-semibold text-tech transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-tech focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+              className="inline-flex items-center gap-1 font-medium text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight sm:ml-auto"
             >
               {t('home.hero.stripCta')}
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
