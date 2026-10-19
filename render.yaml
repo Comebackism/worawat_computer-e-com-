@@ -21,7 +21,7 @@ services:
     plan: free
     region: singapore
     branch: main
-    autoDeploy: true
+    autoDeployTrigger: commit
     # The storefront is built first, then Express serves dist/ and /api from the
     # same origin, so the frontend keeps using relative /api URLs.
     buildCommand: npm ci && npm --prefix server ci && npm run build
