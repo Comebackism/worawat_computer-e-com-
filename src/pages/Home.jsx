@@ -16,6 +16,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const [justAdded, setJustAdded] = useState(null);
+  const [productCount, setProductCount] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
 
@@ -27,7 +28,9 @@ export default function Home() {
     api('/products')
       .then((data) => {
         if (cancelled) return;
-        setProducts((Array.isArray(data) ? data : []).slice(0, 3));
+        const list = Array.isArray(data) ? data : [];
+        setProducts(list.slice(0, 3));
+        setProductCount(list.length);
         setLoading(false);
       })
       .catch((err) => {
@@ -53,6 +56,12 @@ export default function Home() {
   }, [carouselPaused, currentSlide]);
 
   const goToSlide = (index) => setCurrentSlide(((index % BANNERS.length) + BANNERS.length) % BANNERS.length);
+
+  // Trust badges: floating cards on wider screens, a compact grid on phones
+  const heroBadges = [
+    { Icon: Star, titleKey: 'home.hero.rating', subtitleKey: 'home.hero.reviews', iconClass: 'text-amber-400 fill-amber-400' },
+    { Icon: Zap, titleKey: 'home.hero.freeBuild', subtitleKey: 'home.hero.byTechnician', iconClass: 'text-blue-400' },
+  ];
 
   const handleQuickAdd = (event, product) => {
     event.preventDefault();
@@ -123,7 +132,7 @@ export default function Home() {
       </section>
 
       {/* Hero Section with Animation */}
-      <section className="relative overflow-hidden bg-slate-950 text-white py-32">
+      <section className="relative overflow-hidden bg-slate-950 text-white py-20 lg:py-28">
         {/* Animated Background Elements */}
         <div
           aria-hidden="true"
@@ -174,9 +183,9 @@ export default function Home() {
             </ul>
             <dl className="mt-10 flex flex-wrap gap-x-12 gap-y-6 border-t border-white/10 pt-8">
               {[
-                { value: '22+', key: 'home.hero.statProducts' },
+                { value: `${productCount || 22}+`, key: 'home.hero.statProducts' },
                 { value: '15+', key: 'home.hero.statBrands' },
-                { value: '3 ปี', key: 'home.hero.statWarranty' },
+                { value: t('home.hero.statWarrantyValue'), key: 'home.hero.statWarranty' },
               ].map((stat) => (
                 <div key={stat.key}>
                   <dt className="text-2xl md:text-3xl font-extrabold text-white">{stat.value}</dt>
@@ -190,31 +199,46 @@ export default function Home() {
           <div className="relative mx-auto w-full max-w-md lg:max-w-none animate-slideInUp">
             <div aria-hidden="true" className="absolute -inset-6 rounded-[3rem] bg-gradient-to-tr from-blue-600/30 via-indigo-500/20 to-purple-500/30 blur-2xl" />
             <div className="relative rounded-[2rem] border border-white/10 bg-gradient-to-b from-white/10 to-white/[0.02] p-3 backdrop-blur-xl shadow-2xl shadow-blue-950/50">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgba(59,130,246,0.4),transparent_60%)]" />
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-white">
                 <img
                   src="/images/rtx4090.png"
                   alt={t('home.hero.showcase')}
-                  className="relative z-10 h-[70%] w-auto object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.65)]"
+                  className="absolute inset-0 h-full w-full object-cover object-[50%_60%]"
                 />
-                <span className="absolute left-4 top-4 z-20 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-blue-200 backdrop-blur">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(37,99,235,0.35),transparent_65%)] mix-blend-multiply"
+                />
+                <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-900/25 to-transparent" />
+                <span className="absolute left-4 top-4 z-20 rounded-full bg-slate-900/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
                   {t('home.hero.showcase')}
                 </span>
               </div>
             </div>
-            <div className="absolute -left-3 bottom-8 z-20 hidden items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur sm:flex">
-              <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-              <div className="leading-tight">
-                <p className="text-sm font-bold text-white">{t('home.hero.rating')}</p>
-                <p className="text-[11px] text-slate-400">{t('home.hero.reviews')}</p>
+            {heroBadges.map(({ Icon, titleKey, subtitleKey, iconClass }, index) => (
+              <div
+                key={titleKey}
+                className={`absolute z-20 hidden items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur sm:flex ${
+                  index === 0 ? '-left-3 bottom-8' : '-right-3 top-8'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${iconClass}`} />
+                <div className="leading-tight">
+                  <p className="text-sm font-bold text-white">{t(titleKey)}</p>
+                  <p className="text-[11px] text-slate-400">{t(subtitleKey)}</p>
+                </div>
               </div>
-            </div>
-            <div className="absolute -right-3 top-8 z-20 hidden items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 shadow-xl backdrop-blur sm:flex">
-              <Zap className="w-5 h-5 text-blue-400" />
-              <div className="leading-tight">
-                <p className="text-sm font-bold text-white">{t('home.hero.freeBuild')}</p>
-                <p className="text-[11px] text-slate-400">{t('home.hero.byTechnician')}</p>
-              </div>
+            ))}
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:hidden">
+              {heroBadges.map(({ Icon, titleKey, subtitleKey, iconClass }) => (
+                <div key={titleKey} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/80 px-3 py-2.5">
+                  <Icon className={`w-5 h-5 shrink-0 ${iconClass}`} />
+                  <div className="leading-tight">
+                    <p className="text-xs font-bold text-white">{t(titleKey)}</p>
+                    <p className="text-[10px] text-slate-400">{t(subtitleKey)}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
