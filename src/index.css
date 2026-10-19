@@ -1,11 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Prompt', sans-serif;
+  --font-display: 'Chakra Petch', 'Prompt', sans-serif;
   --color-primary: #004ac6;
   --color-background: #f7f9fb;
   --color-surface: #ffffff;
+
+  /* Midnight stage: hero backdrop and its stage lighting */
+  --color-midnight: #0a0e27;
+  --color-abyss: #0f0f23;
+  --color-neon: #7c3aed;
+  --color-tech: #22d3ee;
+
   --shadow-ambient: 0 4px 20px rgba(30, 41, 59, 0.06);
 
   --animate-slideInDown: slideInDown 1s ease-out;
@@ -52,6 +60,23 @@ body {
   color: #1e293b;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard focus stays visible even where a component forgot its own ring */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Respect the OS motion preference: entrance animations render their final state */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 @utility price-lg {
