@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Lock, Mail, ArrowRight, Info, Shield } from 'lucide-react';
-import { GOOGLE_CLIENT_ID } from '../lib/google';
 
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@worawat.com', password: 'admin1234', admin: true },
@@ -18,7 +16,7 @@ export default function Login() {
   const [showForgot, setShowForgot] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,18 +51,6 @@ export default function Login() {
     setEmail(account.email);
     setPassword(account.password);
     submit(account.email, account.password);
-  };
-
-  const handleGoogleSuccess = async ({ credential }) => {
-    setIsSubmitting(true);
-    setError('');
-    const result = await loginWithGoogle(credential);
-    if (result.success) {
-      navigate(from, { replace: true });
-    } else {
-      setError(result.error || t('login.invalid'));
-      setIsSubmitting(false);
-    }
   };
 
   const inputClass = 'w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors';
@@ -161,28 +147,6 @@ export default function Login() {
             ))}
           </div>
         </div>
-
-        {GOOGLE_CLIENT_ID && (
-          <>
-            <div className="my-6 flex items-center gap-4">
-              <div className="h-px bg-slate-200 flex-grow"></div>
-              <span className="text-slate-400 text-sm font-semibold select-none">OR</span>
-              <div className="h-px bg-slate-200 flex-grow"></div>
-            </div>
-
-            <div className="flex w-full justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError(t('login.googleUnavailable'))}
-                theme="outline"
-                size="large"
-                text="continue_with"
-                shape="pill"
-                width="360"
-              />
-            </div>
-          </>
-        )}
 
         <div className="mt-8 text-center">
           <p className="text-slate-500 text-sm font-medium">
