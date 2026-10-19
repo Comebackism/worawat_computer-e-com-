@@ -4,6 +4,7 @@ import { ChevronRight, ChevronLeft, Cpu, Monitor, Zap, ArrowRight, Star, Shoppin
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../lib/api';
+import GpuAnatomy from '../components/GpuAnatomy';
 
 const BANNERS = ['/images/banner1.png', '/images/banner2.png', '/images/banner3.png'];
 const SLIDE_DURATION = 5000;
@@ -173,7 +174,7 @@ export default function Home() {
 
             {/* The photo stays the only loud thing; its studio backdrop is tinted into the ground */}
             <figure className="mx-auto w-full max-w-md lg:max-w-none">
-              <div className="animate-settle overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/40">
+              <div className="overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/40">
                 <div className="relative aspect-[4/3] bg-white">
                   <img
                     src="/images/rtx4090.png"
@@ -237,6 +238,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <GpuAnatomy />
 
       {/* Category Icons with Hover Effects */}
       <section className="max-w-7xl mx-auto px-6 py-20">

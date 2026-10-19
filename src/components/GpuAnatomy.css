@@ -1,0 +1,364 @@
+/* Exploded graphics card: five slabs on a tilted plane, driven by --p (0..1).
+   Every spatial value is in em, so the assembly scales from one font-size. */
+
+.gpu-anatomy {
+  --p: 0;
+  position: relative;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  background: linear-gradient(180deg, #0a0e27 0%, #070a17 100%);
+  color: #ffffff;
+}
+
+.gpu-anatomy--pinned {
+  height: 240vh;
+}
+
+.gpu-anatomy--static {
+  --p: 1;
+}
+
+.gpu-anatomy__sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+}
+
+.gpu-anatomy--static .gpu-anatomy__sticky {
+  position: static;
+  min-height: 0;
+}
+
+.gpu-anatomy__inner {
+  display: grid;
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 3rem;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-areas:
+    'copy stage'
+    'legend stage';
+  column-gap: 3rem;
+  align-items: center;
+}
+
+.gpu-anatomy__copy {
+  grid-area: copy;
+  align-self: end;
+}
+.gpu-anatomy__legend {
+  grid-area: legend;
+  align-self: start;
+  margin-top: 1.75rem;
+}
+.gpu-anatomy__stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Scene ------------------------------------------------------------------ */
+
+.gpu-scene {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 44em;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: clamp(8px, 2.4vw, 10px);
+  perspective: 3200px;
+  perspective-origin: 50% 44%;
+}
+
+.gpu-scene::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 2.4em;
+  width: 24em;
+  height: 3.2em;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.5), transparent);
+  pointer-events: none;
+}
+
+.gpu-stack {
+  --card-w: 34em;
+  --card-h: 13.6em;
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform-style: preserve-3d;
+  transform: translateY(calc(var(--p) * 10em)) scale(calc(1 - var(--p) * 0.1))
+    rotateX(58deg) rotateZ(-24deg);
+}
+
+.gpu-layer {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* One shared progress keeps every plate above the one it came from */
+  transform: translateZ(calc((var(--z0) + var(--rise) * var(--p)) * 1em));
+}
+
+.gpu-anatomy--pinned .gpu-layer {
+  will-change: transform;
+}
+
+.gpu-plane {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1.1em;
+}
+
+.gpu-plane > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* One consistent light source keeps the flat artwork inside the 3D world */
+.gpu-plane::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    148deg,
+    rgb(255 255 255 / 0.16) 0%,
+    rgb(255 255 255 / 0.03) 32%,
+    rgb(0 0 0 / 0.16) 70%,
+    rgb(0 0 0 / 0.42) 100%
+  );
+  pointer-events: none;
+}
+
+.gpu-k1 {
+  --start: 0;
+  --span: 0.2;
+  --rise: 0;
+  --z0: 0;
+}
+.gpu-k2 {
+  --start: 0.1;
+  --span: 0.45;
+  --rise: 6.5;
+  --z0: 0.06;
+}
+.gpu-k3 {
+  --start: 0.2;
+  --span: 0.45;
+  --rise: 13;
+  --z0: 0.12;
+}
+.gpu-k4 {
+  --start: 0.32;
+  --span: 0.46;
+  --rise: 19.5;
+  --z0: 0.18;
+}
+.gpu-k5 {
+  --start: 0.44;
+  --span: 0.5;
+  --rise: 26;
+  --z0: 0.24;
+}
+
+.gpu-anatomy .gpu-k1,
+.gpu-anatomy .gpu-k2,
+.gpu-anatomy .gpu-k3,
+.gpu-anatomy .gpu-k4,
+.gpu-anatomy .gpu-k5 {
+  --lp: clamp(0, calc((var(--p) - var(--start)) / var(--span)), 1);
+}
+
+/* Memory fans out from the die as its layer clears */
+.gpu-k3 .gpu-plane {
+  transform: scale(calc(1 + var(--p) * 0.14));
+}
+
+/* The shroud lifts with a slight twist, like a panel coming off */
+.gpu-k5 .gpu-plane {
+  transform: rotateZ(calc(var(--p) * -2.5deg));
+}
+
+/* Slab thickness: the strip folds down from the near edge */
+.gpu-edge {
+  position: absolute;
+  left: 1.5%;
+  right: 1.5%;
+  bottom: calc(-1 * var(--edge-h));
+  height: var(--edge-h);
+  transform-origin: top center;
+  transform: rotateX(-90deg);
+  border-radius: 0 0 0.35em 0.35em;
+  background: var(--edge-bg);
+  box-shadow: inset 0 0.12em 0 rgb(255 255 255 / 0.07);
+}
+
+.gpu-layer--board {
+  --edge-h: 0.7em;
+  --edge-bg: linear-gradient(180deg, #1a2434, #090e18);
+}
+.gpu-layer--silicon {
+  --edge-h: 0.45em;
+  --edge-bg: linear-gradient(180deg, #1c2637, #0b101b);
+}
+.gpu-layer--vram {
+  --edge-h: 0.32em;
+  --edge-bg: #1a2233;
+}
+.gpu-layer--cooling {
+  /* The fin wall only exists once the heatsink has left the board */
+  --edge-h: calc(0.35em + var(--p) * 1.65em);
+  --edge-bg: repeating-linear-gradient(
+    90deg,
+    #6d788b 0 0.055em,
+    #3c4656 0.055em 0.2em
+  );
+}
+.gpu-layer--shroud {
+  --edge-h: 0.65em;
+  --edge-bg: linear-gradient(180deg, #232b3a, #10151f);
+}
+
+/* Number badges stay legible: they face the camera, not the card */
+.gpu-badge {
+  position: absolute;
+  left: 2.4%;
+  bottom: 5%;
+  display: grid;
+  width: 2.5em;
+  height: 2.5em;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.34);
+  border-radius: 50%;
+  background: #0a0e27;
+  box-shadow: 0 0.35em 0.9em rgb(0 0 0 / 0.55);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1em;
+  font-weight: 500;
+  line-height: 1;
+  transform: rotateZ(24deg) rotateX(-58deg);
+  opacity: clamp(0, calc((var(--p) - 0.04) * 12), 1);
+}
+
+/* Hint ------------------------------------------------------------------- */
+
+.gpu-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgb(255 255 255 / 0.55);
+  font-size: 0.8125rem;
+  opacity: clamp(0, calc(1 - var(--p) * 8), 1);
+}
+
+.gpu-anatomy--static .gpu-hint {
+  display: none;
+}
+
+/* Legend ----------------------------------------------------------------- */
+
+.gpu-legend {
+  border-left: 2px solid rgb(255 255 255 / calc(0.1 + 0.55 * var(--lp)));
+  padding: 0.55rem 0 0.8rem 0.85rem;
+}
+
+.gpu-legend__term {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.gpu-legend__num {
+  color: rgb(255 255 255 / calc(0.5 + 0.42 * var(--lp)));
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.gpu-legend__body {
+  margin: 0.2rem 0 0 2rem;
+  color: rgb(255 255 255 / 0.6);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.gpu-anatomy--static .gpu-legend {
+  border-left-color: rgb(255 255 255 / 0.2);
+}
+
+/* Breakpoints ------------------------------------------------------------ */
+
+@media (min-width: 640px) {
+  .gpu-scene {
+    height: 44em;
+    font-size: clamp(9px, 1.6vw, 11px);
+  }
+  .gpu-stack {
+    --card-w: 38em;
+    --card-h: 15.2em;
+  }
+}
+
+@media (max-width: 1023px) {
+  .gpu-anatomy__inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'copy'
+      'stage'
+      'legend';
+    row-gap: 1.5rem;
+    padding: 4rem 1.25rem 3.5rem;
+  }
+  .gpu-anatomy__legend {
+    display: grid;
+    margin-top: 0;
+    column-gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gpu-anatomy__stage {
+    order: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gpu-scene {
+    height: 44em;
+    font-size: clamp(9px, 0.8vw + 2px, 13px);
+  }
+  .gpu-stack {
+    --card-w: 40em;
+    --card-h: 16em;
+  }
+}
+
+@media (max-width: 640px) {
+  .gpu-anatomy__legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gpu-legend {
+    padding: 0.5rem 0 0.65rem 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gpu-anatomy__sticky {
+    position: static;
+    min-height: 0;
+  }
+  .gpu-anatomy {
+    height: auto;
+  }
+}

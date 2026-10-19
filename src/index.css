@@ -18,21 +18,6 @@
   --animate-fadeIn: fadeIn 1.5s ease-out;
   --animate-slideInUp: slideInUp 1s ease-out;
   --animate-shake: shake 0.4s ease-in-out;
-  /* The hero's single authored moment: the product settles into place */
-  --animate-settle: settle 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
-
-  @keyframes settle {
-    0% {
-      opacity: 0;
-      transform: translateY(14px);
-      filter: blur(8px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-      filter: blur(0);
-    }
-  }
 
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
