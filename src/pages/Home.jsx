@@ -139,29 +139,29 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 pt-16 pb-14 lg:pt-24 lg:pb-20">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
             <div>
-              <h1 className="font-display text-4xl font-semibold leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-[3.4rem]">
+              <h1 className="font-display text-4xl font-semibold leading-[1.4] text-white sm:text-5xl lg:text-[3.2rem]">
                 {t('home.hero.title')}
               </h1>
-              <p className="mt-6 max-w-xl text-lg text-white/65">
+              <p className="mt-6 max-w-xl text-lg leading-[1.75] text-white/70">
                 {t('home.hero.subtitle')}
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <Link
                   to="/products"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+                  className="group inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 font-medium text-white transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
                 >
                   {t('home.hero.cta')}
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   to="/builder"
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:border-white/50 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 px-7 py-3 font-medium text-white transition-colors duration-200 hover:border-white/50 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-midnight"
                 >
                   <Cpu className="w-4 h-4" />
                   {t('home.hero.ctaSecondary')}
                 </Link>
               </div>
-              <ul className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/55">
+              <ul className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/60">
                 {['home.hero.trust1', 'home.hero.trust2', 'home.hero.trust3'].map((key) => (
                   <li key={key} className="flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 shrink-0 text-white/45" />
@@ -173,7 +173,7 @@ export default function Home() {
 
             {/* The photo stays the only loud thing; its studio backdrop is tinted into the ground */}
             <figure className="mx-auto w-full max-w-md lg:max-w-none">
-              <div className="animate-settle overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/50">
+              <div className="animate-settle overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/40">
                 <div className="relative aspect-[4/3] bg-white">
                   <img
                     src="/images/rtx4090.png"
@@ -187,7 +187,7 @@ export default function Home() {
                 </div>
               </div>
               <figcaption className="mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-xs text-white/60">
-                <span className="font-display tracking-wide">{t('home.hero.showcase')}</span>
+                <span className="font-display font-medium">{t('home.hero.showcase')}</span>
                 <span className="inline-flex items-center gap-1.5 text-white/55">
                   <Star className="w-3.5 h-3.5 shrink-0 text-white/40" />
                   {t('home.hero.rating')} · {t('home.hero.reviews')}
@@ -201,31 +201,31 @@ export default function Home() {
             {heroFeatures.map(({ Icon, titleKey, bodyKey }) => (
               <div
                 key={titleKey}
-                className="flex flex-col gap-1 border-b border-white/5 py-5 sm:flex-row sm:items-baseline sm:gap-4"
+                className="flex flex-col gap-1 border-b border-white/5 py-6 sm:flex-row sm:items-baseline sm:gap-4"
               >
-                <dt className="flex shrink-0 items-center gap-2 font-semibold text-white sm:w-44">
+                <dt className="flex shrink-0 items-center gap-2 font-medium text-white sm:w-44">
                   <Icon className="w-4 h-4 shrink-0 text-white/45" />
                   {t(titleKey)}
                 </dt>
-                <dd className="text-sm leading-relaxed text-white/55">{t(bodyKey)}</dd>
+                <dd className="text-sm leading-[1.7] text-white/60">{t(bodyKey)}</dd>
               </div>
             ))}
           </dl>
 
           {/* Proof stated once, quietly, with the repeat path into the catalogue */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/55">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-white/60">
             <span>
               {t('home.hero.statProducts')}{' '}
-              <strong className="font-semibold text-white/80">{productCount || 22}+</strong>
+              <strong className="font-medium text-white/85">{productCount || 22}+</strong>
             </span>
             <span aria-hidden="true" className="hidden h-3 w-px bg-white/15 sm:block" />
             <span>
-              {t('home.hero.statBrands')} <strong className="font-semibold text-white/80">15+</strong>
+              {t('home.hero.statBrands')} <strong className="font-medium text-white/85">15+</strong>
             </span>
             <span aria-hidden="true" className="hidden h-3 w-px bg-white/15 sm:block" />
             <span>
               {t('home.hero.statWarranty')}{' '}
-              <strong className="font-semibold text-white/80">{t('home.hero.statWarrantyValue')}</strong>
+              <strong className="font-medium text-white/85">{t('home.hero.statWarrantyValue')}</strong>
             </span>
             <Link
               to="/products"
