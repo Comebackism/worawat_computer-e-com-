@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Lock, Mail, ArrowRight, Info, Shield } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Info } from 'lucide-react';
 
+// A demo customer account so the storefront can be explored without signing up.
+// The admin account is intentionally not listed here: its password comes from
+// the ADMIN_PASSWORD environment variable.
 const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@worawat.com', password: 'admin1234', admin: true },
-  { label: 'Customer', email: 'john.doe@example.com', password: 'demo1234', admin: false },
+  { label: 'Customer', email: 'john.doe@example.com', password: 'demo1234' },
 ];
 
 export default function Login() {
@@ -141,7 +143,7 @@ export default function Login() {
                 onClick={() => signInAsDemo(account)}
                 className="inline-flex items-center gap-1.5 text-xs font-bold bg-white hover:bg-primary hover:text-white text-slate-700 border border-slate-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-60"
               >
-                {account.admin ? <Shield className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                <Mail className="w-3.5 h-3.5" />
                 {account.email}
               </button>
             ))}

@@ -15,10 +15,22 @@ const {
   normalizeProduct,
   nextId,
 } = require('./data/store');
+const {
+  COOKIE_NAME,
+  issueSession,
+  readSession,
+  parseCookies,
+  sessionCookie,
+  clearCookie,
+  requireAuth,
+  requireAdmin,
+  rateLimit,
+} = require('./auth');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 const TAX_RATE = 0.07;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // Public OAuth client ID (not a secret). Override it with GOOGLE_CLIENT_ID to match
 // VITE_GOOGLE_CLIENT_ID when the app points at your own Google Cloud project.
 const GOOGLE_CLIENT_ID = String(
@@ -28,9 +40,95 @@ const GOOGLE_CLIENT_ID = String(
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 const ORDER_ID_PATTERN = /^ORD-\d{4}-(\d+)$/;
 
-app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+// Origins allowed to call the API with credentials. Same-origin deployments
+// (the documented Render setup) need nothing here; only add this when the
+// storefront lives on a different host.
+//
+// In development Vite proxies /api and rewrites the Host header to the API's
+// own port, so the browser's origin (5173/4173) no longer matches Host: the dev
+// origins are allowlisted explicitly.
+const DEV_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+];
+const ALLOWED_ORIGINS = [
+  ...String(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+  ...(IS_PRODUCTION ? [] : DEV_ORIGINS),
+];
 
+// Behind a reverse proxy the real client IP arrives in X-Forwarded-For; without
+// this the rate limiter would count every caller as the same proxy address.
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// -------------------------------------------------------------- harden shell
+
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.set('Cross-Origin-Opener-Policy', 'same-origin');
+  if (IS_PRODUCTION) {
+    res.set('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+    res.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "img-src 'self' data:",
+        "style-src 'self' 'unsafe-inline'",
+        "script-src 'self'",
+        "font-src 'self' data:",
+        "connect-src 'self'",
+      ].join('; '),
+    );
+  }
+  next();
+});
+
+app.use(
+  cors({
+    // Never reflect an arbitrary origin: only the configured allowlist, and no
+    // header at all otherwise (browsers then block the cross-site read).
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      return callback(null, ALLOWED_ORIGINS.includes(origin));
+    },
+    credentials: true,
+  }),
+);
+
+app.use(express.json({ limit: '256kb' }));
+
+// Defense-in-depth CSRF guard for state-changing requests. Browsers send an
+// Origin header on cross-site writes; only same-origin (or allowlisted) writes
+// proceed. Non-browser clients without an Origin still work.
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next();
+  const origin = req.headers.origin;
+  if (!origin) return next();
+  let sameOrigin = false;
+  try {
+    sameOrigin = new URL(origin).host === req.headers.host;
+  } catch {
+    sameOrigin = false;
+  }
+  if (sameOrigin || ALLOWED_ORIGINS.includes(origin)) return next();
+  return res.status(403).json({ message: 'Cross-site request blocked' });
+});
+
+// ---------------------------------------------------------------- validation
+
+const clean = (value, max = 200) => String(value ?? '').trim().slice(0, max);
 const round = (n) => Math.round(n * 100) / 100;
 const email = (value) => String(value || '').trim().toLowerCase();
 const findProduct = (id) => db.products.find((p) => p.id === Number(id));
@@ -70,6 +168,24 @@ function adjustCustomerSpend(mail, delta) {
   const customer = db.customers.find((c) => email(c.email) === address);
   if (!customer) return;
   customer.spent = Math.max(0, round(Number(customer.spent || 0) + Number(delta || 0)));
+}
+
+// -------------------------------------------------------------- session glue
+
+// Reads the signed session cookie (or a Bearer token) once per request and
+// resolves it to the current user record.
+app.use((req, res, next) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const header = String(req.headers.authorization || '');
+  const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  const claims = readSession(bearer || cookies[COOKIE_NAME] || '');
+  req.user = claims ? db.users.find((u) => Number(u.id) === Number(claims.sub)) || null : null;
+  next();
+});
+
+function startSession(res, user) {
+  res.set('Set-Cookie', sessionCookie(issueSession(user)));
+  return res.json({ user: publicUser(user) });
 }
 
 // ---------------------------------------------------------------- catalogue
@@ -120,7 +236,7 @@ app.get('/api/products/:id', (req, res) => {
   res.json(product);
 });
 
-app.post('/api/products', (req, res) => {
+app.post('/api/products', requireAdmin, (req, res) => {
   const body = req.body || {};
   if (!body.name || !body.category || body.price == null) {
     return res.status(400).json({ message: 'Name, category and price are required' });
@@ -134,7 +250,7 @@ app.post('/api/products', (req, res) => {
   res.status(201).json(product);
 });
 
-app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', requireAdmin, (req, res) => {
   const product = findProduct(req.params.id);
   if (!product) return res.status(404).json({ message: 'Product not found' });
   Object.assign(product, normalizeProduct({ ...product, ...req.body, id: product.id }, product.id));
@@ -142,7 +258,7 @@ app.put('/api/products/:id', (req, res) => {
   res.json(product);
 });
 
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', requireAdmin, (req, res) => {
   const index = db.products.findIndex((p) => p.id === Number(req.params.id));
   if (index === -1) return res.status(404).json({ message: 'Product not found' });
   db.products.splice(index, 1);
@@ -152,23 +268,32 @@ app.delete('/api/products/:id', (req, res) => {
 
 // ------------------------------------------------------------------- orders
 
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', requireAuth, (req, res) => {
   const { email: customerEmail, status } = req.query;
   let list = [...db.orders];
-  if (customerEmail) list = list.filter((o) => email(o.customerEmail) === email(customerEmail));
+
+  // Customers only ever see their own orders; the query string cannot widen that.
+  if (req.user.role === 'admin') {
+    if (customerEmail) list = list.filter((o) => email(o.customerEmail) === email(customerEmail));
+  } else {
+    list = list.filter((o) => email(o.customerEmail) === email(req.user.email));
+  }
   if (status) list = list.filter((o) => o.status === status);
   res.json(list);
 });
 
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', requireAuth, (req, res) => {
   const order = findOrder(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  if (req.user.role !== 'admin' && email(order.customerEmail) !== email(req.user.email)) {
+    return res.status(403).json({ message: 'You do not have access to this order' });
+  }
   res.json(order);
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', requireAuth, (req, res) => {
   const body = req.body || {};
-  const incoming = Array.isArray(body.items) ? body.items : [];
+  const incoming = Array.isArray(body.items) ? body.items.slice(0, 100) : [];
   if (incoming.length === 0) {
     return res.status(400).json({ message: 'Your cart is empty' });
   }
@@ -177,15 +302,22 @@ app.post('/api/orders', (req, res) => {
   const shortages = [];
 
   for (const raw of incoming) {
-    const product = raw.productId != null ? findProduct(raw.productId) : db.products.find((p) => p.name === raw.name);
-    const quantity = Math.max(1, Number(raw.quantity) || 1);
-    const price = product ? product.price : Number(raw.price) || 0;
+    const product = raw.productId != null
+      ? findProduct(raw.productId)
+      : db.products.find((p) => p.name === clean(raw.name, 200));
+    if (!product) {
+      return res.status(400).json({ message: 'One of the items in your cart is no longer available' });
+    }
 
-    if (product && product.stock < quantity) {
+    const quantity = Math.min(Math.max(1, Math.floor(Number(raw.quantity) || 1)), 999);
+    if (product.stock < quantity) {
       shortages.push(`${product.name} (left ${product.stock})`);
       continue;
     }
-    items.push({ productId: product?.id, name: product?.name || raw.name || 'Item', price, quantity });
+
+    // Price and stock are read from the catalogue, never from the request, so a
+    // tampered cart cannot buy a GPU for ฿1.
+    items.push({ productId: product.id, name: product.name, price: product.price, quantity });
   }
 
   if (shortages.length > 0) {
@@ -194,25 +326,28 @@ app.post('/api/orders', (req, res) => {
 
   // Stock is only touched once every line is known to be available.
   for (const item of items) {
-    const product = item.productId ? findProduct(item.productId) : null;
+    const product = findProduct(item.productId);
     if (product) product.stock = Math.max(0, product.stock - item.quantity);
   }
 
   const subtotal = round(items.reduce((sum, i) => sum + i.price * i.quantity, 0));
   const tax = round(subtotal * TAX_RATE);
   const shipping = 0;
+  const paymentMethod = body.paymentMethod === 'qr' ? 'qr' : 'credit';
 
   const order = {
     id: nextOrderId(),
     date: new Date().toISOString().split('T')[0],
-    customerEmail: email(body.customerEmail),
-    customerName: String(body.customerName || '').trim() || 'Guest',
-    address: String(body.address || '').trim(),
-    city: String(body.city || '').trim(),
-    postalCode: String(body.postalCode || '').trim(),
-    paymentMethod: body.paymentMethod === 'qr' ? 'qr' : 'credit',
-    paymentRef: String(body.paymentRef || '').trim(),
-    paymentStatus: body.paymentStatus === 'unpaid' ? 'unpaid' : 'paid',
+    // The buyer is the signed-in user, not whatever the request claims.
+    customerEmail: email(req.user.email),
+    customerName: clean(body.customerName, 100) || req.user.name || 'Guest',
+    address: clean(body.address, 200),
+    city: clean(body.city, 100),
+    postalCode: clean(body.postalCode, 20),
+    paymentMethod,
+    paymentRef: clean(body.paymentRef, 40),
+    // Payment state is decided by the server; a client cannot mark itself paid.
+    paymentStatus: paymentMethod === 'qr' ? 'unpaid' : 'paid',
     status: 'Processing',
     subtotal,
     tax,
@@ -227,11 +362,15 @@ app.post('/api/orders', (req, res) => {
   res.status(201).json(order);
 });
 
-app.put('/api/orders/:id', (req, res) => {
+app.put('/api/orders/:id', requireAdmin, (req, res) => {
   const order = findOrder(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
+  const allowedStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   const nextStatus = req.body?.status;
+  if (nextStatus != null && !allowedStatuses.includes(nextStatus)) {
+    return res.status(400).json({ message: 'Unknown order status' });
+  }
   const cancelled = nextStatus === 'Cancelled' && order.status !== 'Cancelled';
 
   if (nextStatus) order.status = nextStatus;
@@ -252,7 +391,7 @@ app.put('/api/orders/:id', (req, res) => {
   res.json(order);
 });
 
-app.delete('/api/orders/:id', (req, res) => {
+app.delete('/api/orders/:id', requireAdmin, (req, res) => {
   const index = db.orders.findIndex((o) => o.id === String(req.params.id));
   if (index === -1) return res.status(404).json({ message: 'Order not found' });
   const [removed] = db.orders.splice(index, 1);
@@ -263,42 +402,42 @@ app.delete('/api/orders/:id', (req, res) => {
 
 // ---------------------------------------------------------------- customers
 
-app.get('/api/customers', (req, res) => {
+app.get('/api/customers', requireAdmin, (req, res) => {
   res.json(db.customers);
 });
 
-app.post('/api/customers', (req, res) => {
+app.post('/api/customers', requireAdmin, (req, res) => {
   const body = req.body || {};
   if (!body.name || !body.email) {
     return res.status(400).json({ message: 'Name and email are required' });
   }
   const customer = {
     id: nextId(db.customers),
-    name: String(body.name).trim(),
+    name: clean(body.name, 100),
     email: email(body.email),
-    date: body.date || new Date().toISOString().split('T')[0],
-    spent: Number(body.spent) || 0,
+    date: clean(body.date, 20) || new Date().toISOString().split('T')[0],
+    spent: round(Number(body.spent) || 0),
   };
   db.customers.unshift(customer);
   persist();
   res.status(201).json(customer);
 });
 
-app.put('/api/customers/:id', (req, res) => {
+app.put('/api/customers/:id', requireAdmin, (req, res) => {
   const customer = db.customers.find((c) => c.id === Number(req.params.id));
   if (!customer) return res.status(404).json({ message: 'Customer not found' });
   const body = req.body || {};
   Object.assign(customer, {
-    name: body.name ?? customer.name,
-    email: email(body.email ?? customer.email),
-    date: body.date ?? customer.date,
-    spent: body.spent != null ? Number(body.spent) || 0 : customer.spent,
+    name: body.name != null ? clean(body.name, 100) : customer.name,
+    email: body.email != null ? email(body.email) : customer.email,
+    date: body.date != null ? clean(body.date, 20) : customer.date,
+    spent: body.spent != null ? round(Number(body.spent) || 0) : customer.spent,
   });
   persist();
   res.json(customer);
 });
 
-app.delete('/api/customers/:id', (req, res) => {
+app.delete('/api/customers/:id', requireAdmin, (req, res) => {
   const index = db.customers.findIndex((c) => c.id === Number(req.params.id));
   if (index === -1) return res.status(404).json({ message: 'Customer not found' });
   db.customers.splice(index, 1);
@@ -308,29 +447,33 @@ app.delete('/api/customers/:id', (req, res) => {
 
 // ------------------------------------------------------------------ account
 
-function issueToken(user) {
-  const payload = Buffer.from(JSON.stringify({ sub: user.id, role: user.role })).toString('base64url');
-  return `${payload}.${Date.now()}`;
-}
+const AUTH_RATE_LIMIT = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-app.post('/api/login', (req, res) => {
+app.get('/api/me', requireAuth, (req, res) => {
+  res.json({ user: publicUser(req.user) });
+});
+
+app.post('/api/logout', (req, res) => {
+  res.set('Set-Cookie', clearCookie());
+  res.json({ message: 'Signed out' });
+});
+
+app.post('/api/login', AUTH_RATE_LIMIT, (req, res) => {
   const { email: rawEmail, password } = req.body || {};
   const user = db.users.find((u) => email(u.email) === email(rawEmail));
-
-  if (user && user.provider === 'google' && !user.passwordHash) {
-    return res.status(401).json({ message: 'This account uses Google sign-in. Please continue with Google.' });
-  }
   if (!user || !password || !verifyPassword(password, user)) {
+    // One message for "no such account", "wrong password" and "Google-only
+    // account" alike, so the endpoint cannot be used to enumerate users.
     return res.status(401).json({ message: 'Invalid email or password' });
   }
-
-  res.json({ user: publicUser(user), token: issueToken(user) });
+  startSession(res, user);
 });
 
 // Google Identity Services hands the browser a signed ID token (the "credential").
 // Google's tokeninfo endpoint validates the signature and expiry for us, so no
 // extra dependency is needed; we only have to check the token belongs to this app.
-app.post('/api/google-login', async (req, res) => {
+app.post('/api/google-login', AUTH_RATE_LIMIT, async (req, res) => {
   const credential = String(req.body?.credential || '').trim();
   if (!credential) {
     return res.status(400).json({ message: 'Missing Google credential' });
@@ -363,49 +506,45 @@ app.post('/api/google-login', async (req, res) => {
   if (!user) {
     user = {
       id: nextId(db.users),
-      name: String(profile.name || address.split('@')[0]).trim(),
+      name: clean(profile.name, 100) || address.split('@')[0],
       email: address,
       phone: '',
       dob: '',
       role: 'customer',
       provider: 'google',
-      picture: String(profile.picture || ''),
+      picture: clean(profile.picture, 500),
     };
     db.users.push(user);
     upsertCustomer({ name: user.name, email: user.email, amount: 0 });
     persist();
   }
 
-  res.json({ user: publicUser(user), token: issueToken(user) });
+  startSession(res, user);
 });
 
-app.post('/api/register', (req, res) => {
+app.post('/api/register', AUTH_RATE_LIMIT, (req, res) => {
   const { firstName, lastName, email: rawEmail, password, phone, dob } = req.body || {};
 
   if (!firstName || !lastName || !rawEmail || !password) {
     return res.status(400).json({ message: 'Please fill in every required field' });
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(rawEmail).trim())) {
+  if (!EMAIL_PATTERN.test(String(rawEmail).trim())) {
     return res.status(400).json({ message: 'Please enter a valid email address' });
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters' });
+  if (String(password).length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters' });
   }
   const existingUser = db.users.find((u) => email(u.email) === email(rawEmail));
   if (existingUser) {
-    return res.status(409).json({
-      message: existingUser.provider === 'google'
-        ? 'This email is already registered with Google. Please sign in with Google instead.'
-        : 'An account with this email already exists',
-    });
+    return res.status(409).json({ message: 'An account with this email already exists' });
   }
 
   const user = {
     id: nextId(db.users),
-    name: `${firstName} ${lastName}`.trim(),
+    name: `${clean(firstName, 60)} ${clean(lastName, 60)}`.trim(),
     email: email(rawEmail),
-    phone: phone || '',
-    dob: dob || '',
+    phone: clean(phone, 40),
+    dob: clean(dob, 20),
     role: 'customer',
     ...hashPassword(password),
   };
@@ -413,14 +552,14 @@ app.post('/api/register', (req, res) => {
   db.users.push(user);
   upsertCustomer({ name: user.name, email: user.email, amount: 0 });
   persist();
-  res.status(201).json({ user: publicUser(user), token: issueToken(user) });
+  res.status(201).json({ user: publicUser(user) });
 });
 
 // -------------------------------------------------------------------- stats
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', requireAdmin, (req, res) => {
   const monthlyMap = new Map();
 
   for (const order of db.orders) {
@@ -455,18 +594,50 @@ if (fs.existsSync(DIST_DIR)) {
 }
 
 app.use('/api', (req, res) => {
-  res.status(404).json({ message: `Unknown endpoint: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
+// Errors are logged with full detail but never echoed to the client.
 app.use((err, req, res, next) => {
   console.error(err);
   if (res.headersSent) return next(err);
-  res.status(err.status || 500).json({ message: err.message || 'Unexpected server error' });
+  if (err?.type === 'entity.parse.failed') {
+    return res.status(400).json({ message: 'Request body is not valid JSON' });
+  }
+  const status = Number(err?.status || err?.statusCode) || 500;
+  if (status >= 500) return res.status(500).json({ message: 'Unexpected server error' });
+  return res.status(status).json({ message: 'Request could not be processed' });
 });
+
+// Rotates/creates the admin account from the environment so a deployed instance
+// never keeps the demo password baked into the seed data.
+function syncAdminAccount() {
+  const adminEmail = email(process.env.ADMIN_EMAIL || 'admin@worawat.com');
+  const envPassword = String(process.env.ADMIN_PASSWORD || '').trim();
+  let admin = db.users.find((u) => u.role === 'admin');
+
+  if (!admin) {
+    if (!envPassword) {
+      console.warn('No admin account exists. Set ADMIN_EMAIL and ADMIN_PASSWORD to create one.');
+      return;
+    }
+    admin = { id: nextId(db.users), name: 'Worawat Admin', email: adminEmail, phone: '', dob: '', role: 'admin' };
+    db.users.push(admin);
+  }
+
+  if (envPassword) {
+    Object.assign(admin, { email: adminEmail, ...hashPassword(envPassword) });
+    persist();
+    console.log(`Admin account ready: ${admin.email}`);
+  } else {
+    console.warn('ADMIN_PASSWORD is not set: the existing admin password is unchanged. Set it to rotate the credential.');
+  }
+}
 
 async function main() {
   const storage = await init();
   console.log(`Data storage: ${storage.backend}`);
+  syncAdminAccount();
 
   app.listen(PORT, () => {
     console.log(`Worawat_computer API running on http://localhost:${PORT}`);

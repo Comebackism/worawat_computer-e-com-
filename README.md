@@ -79,18 +79,21 @@ environment variables.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin | `admin@worawat.com` | `admin1234` |
 | Customer | `john.doe@example.com` | `demo1234` |
 | Customer | `alice.smith@example.com` | `demo1234` |
 
-The sign-in page has one-click buttons for the admin and customer accounts.
+The sign-in page has a one-click button for the customer account. The **admin
+account is not listed there**: its password comes from `ADMIN_PASSWORD`, and the
+API rotates (or creates) the account from `ADMIN_EMAIL` / `ADMIN_PASSWORD` on
+every start. Without `ADMIN_PASSWORD` a fresh database logs a generated
+one-time password to the console.
 
 ### Google Sign-In (optional)
 
-The login page uses Google's official button via `@react-oauth/google`. The
-browser receives a signed Google ID token, and the API verifies it against
-Google's `tokeninfo` endpoint (including the audience and expiry) before
-creating or reusing an account.
+The login page no longer shows a Google button. The `/api/google-login` endpoint
+is still available for other clients: it verifies a Google ID token against
+Google's `tokeninfo` endpoint (audience and expiry included) before creating or
+reusing an account.
 
 To point it at your own Google Cloud project, create an OAuth 2.0 **Web
 application** client, add `http://localhost:5173` and `http://localhost:4000`
@@ -103,6 +106,26 @@ GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com        # API verification
 ```
 
 Email + password sign-in keeps working if Google is unavailable.
+
+## Security
+
+- **Sessions** are stateless HMAC-signed tokens in an `httpOnly`, `SameSite=Lax`
+  (and `Secure` in production) cookie. JavaScript cannot read them, and a forged
+  or edited token is rejected. Set `AUTH_SECRET` in production so sessions
+  survive restarts and are shared across instances.
+- **Authorization**: reading and writing the catalogue, orders, customers and
+  stats requires an admin session; customers can only read their own orders.
+  Product prices and stock, the buyer's email and the payment state are always
+  taken from the server, never from the request body.
+- **Rate limiting**: login, register and Google sign-in allow 10 attempts per
+  15 minutes per IP (in-memory; use a shared store if you run more than one
+  instance).
+- **Headers**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+  `Permissions-Policy` on every response; HSTS and a `default-src 'self'` CSP in
+  production.
+- **CORS**: same-origin by default. Add extra origins with `CORS_ORIGINS`
+  (comma-separated); a wildcard is never used with credentials.
+- Errors returned to clients are generic; details go to the server log only.
 
 ## PromptPay payments
 
@@ -132,33 +155,40 @@ VITE_PROMPTPAY_CITY=BANGKOK
 > Thai spelling is shown in the UI via `VITE_PROMPTPAY_DISPLAY_NAME` instead.
 
 After scanning, the buyer presses **"I have paid — confirm order"**, which
-creates the order with `paymentMethod: 'qr'`, the payment reference and
-`paymentStatus: 'paid'`, then lands on the order history with the invoice open.
+creates the order with `paymentMethod: 'qr'` and the payment reference. The API
+records `paymentStatus: 'unpaid'` for QR orders (the merchant confirms the
+payment) and `'paid'` for the demo card flow; the client cannot set it.
 
 ## API reference
 
-Base URL `/api`. Try `GET /api/health` first.
+Base URL `/api`. Try `GET /api/health` first. Endpoints marked **admin** need an
+admin session cookie; **auth** needs any signed-in user.
 
 | Method | Endpoint | Notes |
 | --- | --- | --- |
 | GET | `/health` | liveness + row counts |
 | GET | `/meta` | categories, brands, price range |
 | GET | `/products` | filters: `category`, `brand`, `q`, `maxPrice`, `sort=lowToHigh\|highToLow` |
-| GET/POST | `/products`, `/products/:id` | `PUT`/`DELETE` on `/:id` |
-| GET | `/orders` | filters: `email`, `status` |
-| POST | `/orders` | decrements stock, returns **409** when stock is short |
-| PUT | `/orders/:id` | set `status`; cancelling restores stock and customer spend |
-| GET/POST | `/customers`, `/customers/:id` | `PUT`/`DELETE` on `/:id` |
-| POST | `/login`, `/register` | scrypt-hashed passwords, returns a demo token |
+| POST | `/products` | **admin** |
+| PUT/DELETE | `/products/:id` | **admin** |
+| GET | `/orders` | **auth** — customers see only their own orders; admins see all |
+| GET | `/orders/:id` | **auth** — owner or admin only |
+| POST | `/orders` | **auth** — server-side pricing, decrements stock, returns **409** when short |
+| PUT/DELETE | `/orders/:id` | **admin** — cancelling restores stock and customer spend |
+| GET/POST | `/customers`, `/customers/:id` | **admin** (`PUT`/`DELETE` on `/:id`) |
+| POST | `/login`, `/register` | scrypt-hashed passwords; sets the session cookie |
+| POST | `/logout` | clears the session cookie |
+| GET | `/me` | **auth** — current user profile |
 | POST | `/google-login` | verifies a Google ID token, creates the customer on first use |
-| GET | `/stats` | dashboard KPIs + monthly series |
+| GET | `/stats` | **admin** — dashboard KPIs + monthly series |
 
 ## Data storage
 
 Locally, `server/data/db.json` is created on first run from
 `server/data/seed.js` (22 products, 2 orders, 5 customers, 3 accounts).
 Passwords are stored as `scrypt` hashes with a per-user salt — the plain text
-only ever exists in the seed file.
+only ever exists in the seed file, and the admin password comes from
+`ADMIN_PASSWORD`.
 
 ```bash
 npm run reset-db        # delete db.json; it is reseeded on the next start

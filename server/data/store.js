@@ -54,18 +54,20 @@ function normalizeProduct(product, fallbackId) {
         .map((s) => s.trim())
         .filter(Boolean);
 
+  const text = (value, max) => String(value ?? '').slice(0, max);
+
   return {
     ...product,
     id: Number(product.id) || fallbackId,
-    name: String(product.name || 'Untitled product').trim(),
-    brand: String(product.brand || 'Other').trim(),
-    category: String(product.category || 'Other').trim(),
-    description: String(product.description || 'No description provided.'),
-    image: String(product.image || '/images/storage.png'),
-    memory: String(product.memory || 'N/A'),
-    price: Number(product.price) || 0,
-    stock: Number.isFinite(Number(product.stock)) ? Number(product.stock) : 0,
-    specs,
+    name: text(product.name || 'Untitled product', 200).trim() || 'Untitled product',
+    brand: text(product.brand || 'Other', 100).trim() || 'Other',
+    category: text(product.category || 'Other', 100).trim() || 'Other',
+    description: text(product.description || 'No description provided.', 2000),
+    image: text(product.image || '/images/storage.png', 500),
+    memory: text(product.memory || 'N/A', 100),
+    price: Math.max(0, Number(product.price) || 0),
+    stock: Number.isFinite(Number(product.stock)) ? Math.max(0, Math.floor(Number(product.stock))) : 0,
+    specs: specs.map((s) => String(s).slice(0, 300)),
   };
 }
 
@@ -103,12 +105,24 @@ function hydrate(parsed) {
   };
 }
 
+function seedUsers() {
+  const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
+  const generated = adminPassword || crypto.randomBytes(12).toString('base64url');
+  if (!adminPassword) {
+    console.warn(`ADMIN_PASSWORD is not set. Generated a one-time admin password: ${generated}`);
+  }
+  return seed.users.map(({ password, ...user }) => {
+    const chosen = user.role === 'admin' && !password ? generated : password;
+    return { ...user, ...hashPassword(chosen) };
+  });
+}
+
 function freshDatabase() {
   return {
     products: seed.products.map((p, idx) => normalizeProduct(p, idx + 1)),
     orders: seed.orders.map(normalizeOrder),
     customers: seed.customers.map((c) => ({ ...c, spent: Number(c.spent) || 0 })),
-    users: seed.users.map(({ password, ...user }) => ({ ...user, ...hashPassword(password) })),
+    users: seedUsers(),
   };
 }
 

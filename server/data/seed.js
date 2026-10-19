@@ -323,9 +323,11 @@ const customers = [
 ];
 
 // Demo accounts. `password` is plain text only here; the store hashes it on first
-// run and the plain value never touches data/db.json.
+// run and the plain value never touches data/db.json. The admin password is left
+// empty on purpose: it comes from ADMIN_PASSWORD (or a generated one) so a real
+// deployment never starts with a known credential.
 const users = [
-  { id: 1, name: 'Worawat Admin', email: 'admin@worawat.com', role: 'admin', password: 'admin1234' },
+  { id: 1, name: 'Worawat Admin', email: 'admin@worawat.com', role: 'admin', password: null },
   { id: 2, name: 'John Doe', email: 'john.doe@example.com', role: 'customer', password: 'demo1234' },
   { id: 3, name: 'Alice Smith', email: 'alice.smith@example.com', role: 'customer', password: 'demo1234' },
 ];

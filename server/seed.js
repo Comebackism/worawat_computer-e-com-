@@ -1,4 +1,11 @@
+const crypto = require('node:crypto');
 const pool = require('./db');
+
+// Passwords are stored as scrypt hashes (salt:hash), never as plain text.
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return `${salt}:${crypto.scryptSync(String(password), salt, 32).toString('hex')}`;
+}
 
 async function seedDatabase() {
   console.log("Seeding database...");
@@ -78,8 +85,10 @@ async function seedDatabase() {
     `);
 
     // Insert Users (merged with Customers)
+    const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim() || crypto.randomBytes(12).toString('base64url');
+    const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@worawat.com').trim().toLowerCase();
     const mockUsers = [
-      { first_name: 'Admin', last_name: 'User', email: 'admin@example.com', password: 'password123', phone: '0812345678', dob: '1990-01-01', role: 'admin' },
+      { first_name: 'Admin', last_name: 'User', email: adminEmail, password: adminPassword, phone: '0812345678', dob: '1990-01-01', role: 'admin' },
       { first_name: 'John', last_name: 'Doe', email: 'john.doe@example.com', password: 'password123', phone: '0899999991', dob: '1992-05-15', role: 'customer' },
       { first_name: 'Alice', last_name: 'Smith', email: 'alice.smith@example.com', password: 'password123', phone: '0899999992', dob: '1988-11-20', role: 'customer' },
       { first_name: 'Bob', last_name: 'Johnson', email: 'bob.johnson@example.com', password: 'password123', phone: '0899999993', dob: '1995-02-10', role: 'customer' },
@@ -89,7 +98,7 @@ async function seedDatabase() {
     for (const u of mockUsers) {
       await pool.query(
         'INSERT INTO users (first_name, last_name, email, password, phone, dob, role) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [u.first_name, u.last_name, u.email, u.password, u.phone, u.dob, u.role]
+        [u.first_name, u.last_name, u.email, hashPassword(u.password), u.phone, u.dob, u.role]
       );
     }
 

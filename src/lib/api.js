@@ -20,6 +20,8 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
   try {
     response = await fetch(`${API_URL}${path}`, {
       method,
+      // The session lives in an httpOnly cookie, so it must travel with every call.
+      credentials: 'include',
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,

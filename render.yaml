@@ -34,6 +34,15 @@ services:
         fromDatabase:
           name: worawat-computer-db
           property: connectionString
+      # Signs the session cookie. Render generates a strong value on first deploy.
+      - key: AUTH_SECRET
+        generateValue: true
+      # Admin credentials. Set ADMIN_PASSWORD in the dashboard so the account
+      # never keeps a demo password; leaving it unset keeps the existing one.
+      - key: ADMIN_EMAIL
+        value: admin@worawat.com
+      - key: ADMIN_PASSWORD
+        sync: false
       # Optional Google Sign-In. Leave both empty to use the client ID already
       # baked into src/lib/google.js and server/index.js, in which case add this
       # service's URL to that client's authorised JavaScript origins.

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext(null);
@@ -16,53 +16,58 @@ function readCart(key) {
 }
 
 export function CartProvider({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const key = storageKey(user?.email);
-  const [cartItems, setCartItems] = useState(() => readCart(key));
-  const activeKey = useRef(key);
 
-  // Carts are per account, so switching users swaps the basket instead of
-  // leaking one shopper's items into another one's checkout.
-  useEffect(() => {
-    if (activeKey.current === key) return;
-    activeKey.current = key;
-    setCartItems(readCart(key));
-  }, [key]);
+  // The key and its items are stored together so the cart is never written
+  // under a key it does not belong to (the session resolves a moment after the
+  // first render, which used to briefly flash the guest basket).
+  const [cart, setCart] = useState({ key: 'guest', items: [] });
 
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(cartItems));
-  }, [key, cartItems]);
+    if (loading) return;
+    setCart((prev) => (prev.key === key ? prev : { key, items: readCart(key) }));
+  }, [key, loading]);
+
+  useEffect(() => {
+    if (loading || cart.key !== key) return;
+    localStorage.setItem(cart.key, JSON.stringify(cart.items));
+  }, [cart, key, loading]);
 
   const addToCart = (product, quantityToAdd = 1) => {
     const limit = Number.isFinite(product?.stock) ? product.stock : Infinity;
-    setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: Math.min(item.quantity + quantityToAdd, limit) }
-            : item,
-        );
-      }
-      return [...prev, { ...product, quantity: Math.min(quantityToAdd, limit) }];
+    setCart((prev) => {
+      const existing = prev.items.find((item) => item.id === product.id);
+      const items = existing
+        ? prev.items.map((item) =>
+            item.id === product.id
+              ? { ...item, quantity: Math.min(item.quantity + quantityToAdd, limit) }
+              : item,
+          )
+        : [...prev.items, { ...product, quantity: Math.min(quantityToAdd, limit) }];
+      return { ...prev, items };
     });
   };
 
   const removeFromCart = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    setCart((prev) => ({ ...prev, items: prev.items.filter((item) => item.id !== id) }));
   };
 
   const updateQuantity = (id, quantity) => {
     if (quantity < 1) return;
-    setCartItems((prev) => prev.map((item) => {
-      if (item.id !== id) return item;
-      const limit = Number.isFinite(item.stock) ? item.stock : Infinity;
-      return { ...item, quantity: Math.min(quantity, limit) };
+    setCart((prev) => ({
+      ...prev,
+      items: prev.items.map((item) => {
+        if (item.id !== id) return item;
+        const limit = Number.isFinite(item.stock) ? item.stock : Infinity;
+        return { ...item, quantity: Math.min(quantity, limit) };
+      }),
     }));
   };
 
-  const clearCart = () => setCartItems([]);
+  const clearCart = () => setCart((prev) => ({ ...prev, items: [] }));
 
+  const cartItems = cart.items;
   const cartTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 

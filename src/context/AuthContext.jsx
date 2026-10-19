@@ -1,36 +1,37 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
-
-export const USER_KEY = 'worawat_computer_user';
-export const TOKEN_KEY = 'worawat_computer_token';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // The session lives in an httpOnly cookie that JavaScript cannot read, so the
+  // profile is re-fetched from the API on every load instead of being trusted
+  // from client storage.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(USER_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch {
-      localStorage.removeItem(USER_KEY);
-    }
-    setLoading(false);
+    let cancelled = false;
+    api('/me')
+      .then((data) => {
+        if (!cancelled) setUser(data?.user || null);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const persistSession = (nextUser, token) => {
-    setUser(nextUser);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-  };
 
   const login = async (email, password) => {
     try {
       const data = await api('/login', { method: 'POST', body: { email, password } });
-      persistSession(data.user, data.token);
+      setUser(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
@@ -40,7 +41,7 @@ export function AuthProvider({ children }) {
   const register = async (formData) => {
     try {
       const data = await api('/register', { method: 'POST', body: formData });
-      persistSession(data.user, data.token);
+      setUser(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
@@ -52,23 +53,26 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async (credential) => {
     try {
       const data = await api('/google-login', { method: 'POST', body: { credential } });
-      persistSession(data.user, data.token);
+      setUser(data.user);
       return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(async () => {
     setUser(null);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(TOKEN_KEY);
-  };
+    try {
+      await api('/logout', { method: 'POST' });
+    } catch {
+      // The local state is already cleared; a failed logout just leaves a stale
+      // cookie that the next /me call will reject anyway.
+    }
+  }, []);
 
   const value = useMemo(
     () => ({ user, loading, isAdmin: user?.role === 'admin', login, register, loginWithGoogle, logout }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, loading],
+    [user, loading, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
