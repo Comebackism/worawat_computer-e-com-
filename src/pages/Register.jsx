@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { Eye, EyeOff, Monitor } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -67,9 +67,8 @@ export default function Register() {
     <div className="min-h-screen flex flex-col items-center justify-center py-12 px-6 bg-slate-50">
       
       <div className="mb-8 text-center select-none">
-        <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-3xl tracking-tight mb-2 focus:outline-none">
-          <Monitor className="w-8 h-8" />
-          Worawat_computer
+        <Link to="/" className="inline-flex items-center justify-center mb-2 focus:outline-none">
+          <img src="/images/logoworawat compter.png" alt="Worawat Computer" className="h-20 sm:h-24 w-auto object-contain" />
         </Link>
         <h1 className="text-2xl font-extrabold text-slate-900 mt-4">{t('register.title')}</h1>
       </div>

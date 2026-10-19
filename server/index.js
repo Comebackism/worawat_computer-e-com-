@@ -6,7 +6,9 @@ const express = require('express');
 const cors = require('cors');
 const {
   db,
+  init,
   persist,
+  close,
   hashPassword,
   verifyPassword,
   publicUser,
@@ -17,6 +19,12 @@ const {
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 const TAX_RATE = 0.07;
+// Public OAuth client ID (not a secret). Override it with GOOGLE_CLIENT_ID to match
+// VITE_GOOGLE_CLIENT_ID when the app points at your own Google Cloud project.
+const GOOGLE_CLIENT_ID = String(
+  process.env.GOOGLE_CLIENT_ID ||
+    '418023364772-mdn0alhu6g5dlqbtarhqfp93jvi5robt.apps.googleusercontent.com',
+).trim();
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 const ORDER_ID_PATTERN = /^ORD-\d{4}-(\d+)$/;
 
@@ -309,8 +317,63 @@ app.post('/api/login', (req, res) => {
   const { email: rawEmail, password } = req.body || {};
   const user = db.users.find((u) => email(u.email) === email(rawEmail));
 
+  if (user && user.provider === 'google' && !user.passwordHash) {
+    return res.status(401).json({ message: 'This account uses Google sign-in. Please continue with Google.' });
+  }
   if (!user || !password || !verifyPassword(password, user)) {
     return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  res.json({ user: publicUser(user), token: issueToken(user) });
+});
+
+// Google Identity Services hands the browser a signed ID token (the "credential").
+// Google's tokeninfo endpoint validates the signature and expiry for us, so no
+// extra dependency is needed; we only have to check the token belongs to this app.
+app.post('/api/google-login', async (req, res) => {
+  const credential = String(req.body?.credential || '').trim();
+  if (!credential) {
+    return res.status(400).json({ message: 'Missing Google credential' });
+  }
+
+  let profile;
+  try {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!response.ok) {
+      return res.status(401).json({ message: 'Google sign-in failed. Please try again.' });
+    }
+    profile = await response.json();
+  } catch {
+    return res.status(502).json({ message: 'Could not reach Google to verify the sign-in. Please try again.' });
+  }
+
+  if (profile.aud !== GOOGLE_CLIENT_ID) {
+    return res.status(401).json({ message: 'This Google sign-in was issued for a different app' });
+  }
+  if (profile.email_verified !== 'true' || !profile.email) {
+    return res.status(401).json({ message: 'Your Google email address is not verified' });
+  }
+  if (Number(profile.exp) * 1000 < Date.now()) {
+    return res.status(401).json({ message: 'Google sign-in expired. Please try again.' });
+  }
+
+  const address = email(profile.email);
+  let user = db.users.find((u) => email(u.email) === address);
+
+  if (!user) {
+    user = {
+      id: nextId(db.users),
+      name: String(profile.name || address.split('@')[0]).trim(),
+      email: address,
+      phone: '',
+      dob: '',
+      role: 'customer',
+      provider: 'google',
+      picture: String(profile.picture || ''),
+    };
+    db.users.push(user);
+    upsertCustomer({ name: user.name, email: user.email, amount: 0 });
+    persist();
   }
 
   res.json({ user: publicUser(user), token: issueToken(user) });
@@ -328,8 +391,13 @@ app.post('/api/register', (req, res) => {
   if (String(password).length < 6) {
     return res.status(400).json({ message: 'Password must be at least 6 characters' });
   }
-  if (db.users.some((u) => email(u.email) === email(rawEmail))) {
-    return res.status(409).json({ message: 'An account with this email already exists' });
+  const existingUser = db.users.find((u) => email(u.email) === email(rawEmail));
+  if (existingUser) {
+    return res.status(409).json({
+      message: existingUser.provider === 'google'
+        ? 'This email is already registered with Google. Please sign in with Google instead.'
+        : 'An account with this email already exists',
+    });
   }
 
   const user = {
@@ -396,7 +464,25 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || 'Unexpected server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Worawat_computer API running on http://localhost:${PORT}`);
-  if (fs.existsSync(DIST_DIR)) console.log(`Serving production build from ${DIST_DIR}`);
+async function main() {
+  const storage = await init();
+  console.log(`Data storage: ${storage.backend}`);
+
+  app.listen(PORT, () => {
+    console.log(`Worawat_computer API running on http://localhost:${PORT}`);
+    if (fs.existsSync(DIST_DIR)) console.log(`Serving production build from ${DIST_DIR}`);
+  });
+}
+
+// Render sends SIGTERM before replacing an instance. Letting the pending write
+// finish first means the last order of the old release is not lost.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    close().finally(() => process.exit(0));
+  });
+}
+
+main().catch((err) => {
+  console.error('Could not start the API:', err);
+  process.exit(1);
 });

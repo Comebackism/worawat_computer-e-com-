@@ -1,7 +1,15 @@
 'use strict';
 
-// Tiny JSON-file persistence layer so admin edits and new orders survive a
-// server restart. Swap this module for a real database when you outgrow it.
+// Persistence for products, orders, customers and accounts.
+//
+// `init()` picks a backend once at start-up:
+//   * DATABASE_URL set -> Postgres. The whole dataset is one JSONB document, so
+//     every list keeps the exact shape the routes already read. Render's disks
+//     are wiped on each deploy, a managed database is not.
+//   * DATABASE_URL unset -> the local db.json file, which is what `npm run dev`
+//     and the scripts in this folder use.
+//
+// Both backends keep the data in memory, so route handlers stay synchronous.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9,6 +17,14 @@ const crypto = require('node:crypto');
 const seed = require('./seed');
 
 const DB_FILE = path.join(__dirname, 'db.json');
+const STATE_ID = 'main';
+const UPSERT_STATE = `insert into app_state (id, data) values ($1, $2)
+  on conflict (id) do update set data = excluded.data, updated_at = now()`;
+
+const db = { products: [], orders: [], customers: [], users: [] };
+
+let pool = null;
+let writeQueue = Promise.resolve();
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return { salt, passwordHash: crypto.scryptSync(String(password), salt, 32).toString('hex') };
@@ -77,6 +93,16 @@ function normalizeOrder(order) {
   };
 }
 
+function hydrate(parsed) {
+  const data = parsed || {};
+  return {
+    products: (data.products || []).map((p, idx) => normalizeProduct(p, idx + 1)),
+    orders: (data.orders || []).map(normalizeOrder),
+    customers: data.customers || [],
+    users: data.users || [],
+  };
+}
+
 function freshDatabase() {
   return {
     products: seed.products.map((p, idx) => normalizeProduct(p, idx + 1)),
@@ -86,15 +112,11 @@ function freshDatabase() {
   };
 }
 
-function loadDatabase() {
+// --------------------------------------------------------------- file backend
+
+function readFileDatabase() {
   try {
-    const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    return {
-      products: (parsed.products || []).map((p, idx) => normalizeProduct(p, idx + 1)),
-      orders: (parsed.orders || []).map(normalizeOrder),
-      customers: parsed.customers || [],
-      users: parsed.users || [],
-    };
+    return hydrate(JSON.parse(fs.readFileSync(DB_FILE, 'utf8')));
   } catch {
     const fresh = freshDatabase();
     try {
@@ -107,9 +129,7 @@ function loadDatabase() {
   }
 }
 
-const db = loadDatabase();
-
-function persist() {
+function writeFileDatabase() {
   try {
     const tmp = `${DB_FILE}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(db, null, 2), 'utf8');
@@ -119,8 +139,98 @@ function persist() {
   }
 }
 
+// ----------------------------------------------------------- postgres backend
+
+// Managed hosts disagree on whether they accept TLS on their private endpoint,
+// so try the configured mode first and fall back to the other one.
+function sslCandidates() {
+  const requested = String(process.env.DATABASE_SSL || '').trim().toLowerCase();
+  if (requested === 'true' || requested === 'require') return [{ rejectUnauthorized: false }];
+  if (requested === 'false' || requested === 'disable') return [false];
+  return [false, { rejectUnauthorized: false }];
+}
+
+async function connect(connectionString) {
+  const { Pool } = require('pg');
+  let lastError;
+
+  for (const ssl of sslCandidates()) {
+    const candidate = new Pool({ connectionString, ssl });
+    try {
+      await candidate.query('select 1');
+      candidate.on('error', (err) => console.error('Postgres connection error:', err.message));
+      return candidate;
+    } catch (err) {
+      lastError = err;
+      await candidate.end().catch(() => {});
+    }
+  }
+
+  throw lastError;
+}
+
+// ------------------------------------------------------------------ lifecycle
+
+async function init() {
+  const connectionString = String(process.env.DATABASE_URL || '').trim();
+
+  if (!connectionString) {
+    Object.assign(db, readFileDatabase());
+    return { backend: 'file', file: DB_FILE };
+  }
+
+  pool = await connect(connectionString);
+  await pool.query(`create table if not exists app_state (
+    id text primary key,
+    data jsonb not null,
+    updated_at timestamptz not null default now()
+  )`);
+
+  const { rows } = await pool.query('select data from app_state where id = $1', [STATE_ID]);
+  if (rows.length) {
+    Object.assign(db, hydrate(rows[0].data));
+  } else {
+    Object.assign(db, freshDatabase());
+    await pool.query(UPSERT_STATE, [STATE_ID, JSON.stringify(db)]);
+    console.log('Seeded the Postgres database');
+  }
+
+  return { backend: 'postgres' };
+}
+
+// Fire-and-forget: route handlers call this synchronously after mutating `db`.
+// Writes are chained so they land in the order they were requested, and the last
+// one always carries the newest snapshot.
+function persist() {
+  if (!pool) {
+    writeFileDatabase();
+    return;
+  }
+
+  const snapshot = JSON.stringify(db);
+  writeQueue = writeQueue
+    .then(() => pool.query(UPSERT_STATE, [STATE_ID, snapshot]))
+    .catch((err) => console.error('Could not persist to Postgres:', err.message));
+}
+
+async function close() {
+  await writeQueue.catch(() => {});
+  if (pool) await pool.end();
+}
+
 function nextId(list) {
   return list.length ? Math.max(...list.map((x) => Number(x.id) || 0)) + 1 : 1;
 }
 
-module.exports = { db, persist, hashPassword, verifyPassword, publicUser, normalizeProduct, nextId, DB_FILE };
+module.exports = {
+  db,
+  init,
+  persist,
+  close,
+  hashPassword,
+  verifyPassword,
+  publicUser,
+  normalizeProduct,
+  nextId,
+  DB_FILE,
+};

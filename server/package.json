@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
+    "start": "node --env-file-if-exists=../.env index.js",
+    "dev": "node --watch --env-file-if-exists=../.env index.js",
     "reset-db": "node -e \"require('node:fs').rmSync('data/db.json',{force:true});console.log('data/db.json removed - it will be reseeded on next start')\""
   },
   "keywords": [],

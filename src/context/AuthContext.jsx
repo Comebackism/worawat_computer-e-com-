@@ -47,16 +47,16 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Demo shortcut while there is no real OAuth client wired up.
-  const loginWithGoogle = () => {
-    const demoUser = {
-      id: 999,
-      name: 'Google Demo User',
-      email: 'google.demo@example.com',
-      role: 'customer',
-    };
-    persistSession(demoUser, 'mock-google-token');
-    return { success: true, user: demoUser };
+  // `credential` is the ID token handed back by Google Identity Services and is
+  // verified by the API before a session is created.
+  const loginWithGoogle = async (credential) => {
+    try {
+      const data = await api('/google-login', { method: 'POST', body: { credential } });
+      persistSession(data.user, data.token);
+      return { success: true, user: data.user };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   const logout = () => {
